@@ -5,21 +5,21 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.StackPane?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.testproject.MainController">
+<StackPane stylesheets="@styles.css" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.testproject.MainController">
     <children>
-        <Label layoutX="240.0" layoutY="49.0" text="Receive Mode">
-            <font>
-                <Font size="20.0" />
-            </font>
-        </Label>
-        <ToggleButton fx:id="receiveToggle" layoutX="226.0" layoutY="135.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="148.0" text="Receive Mode: ON" />
+        <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
+            <children>
+                <Label styleClass="header-label" layoutX="225.0" layoutY="49.0" text="Receive Mode" />
 
-        <!-- New Progress Bar -->
-<!--        <ProgressBar fx:id="receiveProgressBar" layoutX="150.0" layoutY="190.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" />-->
-        <ProgressBar fx:id="receiveProgressBar" layoutX="150.0" layoutY="190.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" visible="false" />
-        <Label fx:id="receiveStatusLabel" alignment="CENTER" layoutX="14.0" layoutY="220.0" prefHeight="17.0" prefWidth="573.0" text="Initializing..." />
-        <Button layoutX="239.0" layoutY="320.0" mnemonicParsing="false" onAction="#goToSendScene" text="Switch to Send Mode" />
+                <ToggleButton fx:id="receiveToggle" layoutX="226.0" layoutY="135.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="148.0" text="Receive Mode: ON" />
+
+                <ProgressBar fx:id="receiveProgressBar" layoutX="150.0" layoutY="190.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" visible="false" />
+
+                <Label fx:id="receiveStatusLabel" alignment="CENTER" layoutX="14.0" layoutY="220.0" prefHeight="17.0" prefWidth="573.0" text="Initializing..." />
+                <Button layoutX="239.0" layoutY="320.0" mnemonicParsing="false" onAction="#goToSendScene" text="Switch to Send Mode" />
+            </children>
+        </AnchorPane>
     </children>
-</AnchorPane>
+</StackPane>

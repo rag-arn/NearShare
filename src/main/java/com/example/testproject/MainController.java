@@ -18,8 +18,13 @@ import java.util.List;
 
 public class MainController {
 
-    @FXML private ListView<String> peerListView;
-    @FXML private ListView<String> fileListView; // New list for selected files
+    // The new TabPane and its 3 variations of the peer list
+    @FXML private TabPane sendModeTabPane;
+    @FXML private ListView<String> peerListViewOne;
+    @FXML private ListView<String> peerListViewMany;
+    @FXML private ListView<String> peerListViewAll;
+
+    @FXML private ListView<String> fileListView;
 
     @FXML private Label sendStatusLabel;
     @FXML private Label receiveStatusLabel;
@@ -27,7 +32,6 @@ public class MainController {
     @FXML private ProgressBar sendProgressBar;
     @FXML private ProgressBar receiveProgressBar;
 
-    // Dynamic UI Buttons
     @FXML private Button selectFilesButton;
     @FXML private Button removeFileButton;
     @FXML private Button sendFilesButton;
@@ -35,7 +39,6 @@ public class MainController {
     private static ReceiverTask currentReceiverTask;
     private ObservableList<String> peers;
 
-    // File tracking
     private List<File> selectedFilesData = new ArrayList<>();
     private ObservableList<String> displayFileNames = FXCollections.observableArrayList();
 
@@ -57,15 +60,25 @@ public class MainController {
             });
         }
 
-        if (peerListView != null) {
+        // Initialize the 3 Send Tabs if we are on the Send Scene
+        if (peerListViewOne != null) {
             peers = FXCollections.observableArrayList();
-            peerListView.setItems(peers);
+
+            // Bind all 3 lists to the exact same live network data
+            peerListViewOne.setItems(peers);
+            peerListViewMany.setItems(peers);
+            peerListViewAll.setItems(peers);
+
+            // Tab 2: Allow holding CMD/CTRL to select multiple devices
+            peerListViewMany.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+            // Tab 3: Disable clicking entirely (it just targets everyone in the list)
+            peerListViewAll.setMouseTransparent(true);
+            peerListViewAll.setFocusTraversable(false);
+
+            fileListView.setItems(displayFileNames);
             DiscoveryManager.startListening(peers);
 
-            // Link the UI list to our observable data
-            fileListView.setItems(displayFileNames);
-
-            // Disable the remove button if no specific file is clicked in the list
             removeFileButton.setDisable(true);
             fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 removeFileButton.setDisable(newVal == null);
@@ -95,13 +108,12 @@ public class MainController {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.setTitle("Select files to send");
 
-        // Allows selecting multiple files at once
-        List<File> chosenFiles = fileChooser.showOpenMultipleDialog(peerListView.getScene().getWindow());
+        List<File> chosenFiles = fileChooser.showOpenMultipleDialog(sendModeTabPane.getScene().getWindow());
 
         if (chosenFiles != null && !chosenFiles.isEmpty()) {
             for (File f : chosenFiles) {
                 selectedFilesData.add(f);
-                displayFileNames.add(f.getName()); // Only display the clean name
+                displayFileNames.add(f.getName());
             }
             updateButtonVisibility();
         }
@@ -117,7 +129,6 @@ public class MainController {
         }
     }
 
-    // Controls the swapping of the Select and Send buttons
     private void updateButtonVisibility() {
         boolean hasFiles = !selectedFilesData.isEmpty();
         selectFilesButton.setVisible(!hasFiles);
@@ -127,23 +138,39 @@ public class MainController {
 
     @FXML
     public void onSendFilesButtonClicked(ActionEvent event) {
-        String selectedPeer = peerListView.getSelectionModel().getSelectedItem();
-        if (selectedPeer == null) {
-            sendStatusLabel.setText("Please select a device from the list.");
+        if (selectedFilesData.isEmpty()) return;
+
+        List<String> targetPeers = new ArrayList<>();
+
+        // Determine which targeting logic to use based on the active tab
+        int activeTab = sendModeTabPane.getSelectionModel().getSelectedIndex();
+
+        if (activeTab == 0) {
+            // One to One
+            String selected = peerListViewOne.getSelectionModel().getSelectedItem();
+            if (selected != null) targetPeers.add(selected);
+        } else if (activeTab == 1) {
+            // One to Many
+            targetPeers.addAll(peerListViewMany.getSelectionModel().getSelectedItems());
+        } else if (activeTab == 2) {
+            // One to All Devices
+            targetPeers.addAll(peers);
+        }
+
+        if (targetPeers.isEmpty()) {
+            sendStatusLabel.setText("No target devices found or selected.");
             return;
         }
 
-        if (selectedFilesData.isEmpty()) return;
-
-        String targetIP = selectedPeer.substring(selectedPeer.lastIndexOf("(") + 1, selectedPeer.lastIndexOf(")"));
-
-        // Copy the list so we can safely clear the UI immediately
         List<File> filesToTransfer = new ArrayList<>(selectedFilesData);
 
-        Thread senderThread = new Thread(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
-        senderThread.start();
+        // Spawn a parallel background thread for EVERY target device
+        for (String peer : targetPeers) {
+            String targetIP = peer.substring(peer.lastIndexOf("(") + 1, peer.lastIndexOf(")"));
+            Thread senderThread = new Thread(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
+            senderThread.start(); // Operating system handles them simultaneously!
+        }
 
-        // Clear UI for the next batch
         selectedFilesData.clear();
         displayFileNames.clear();
         updateButtonVisibility();

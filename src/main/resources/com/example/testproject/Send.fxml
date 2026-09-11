@@ -4,33 +4,64 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.StackPane?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.testproject.MainController">
+<StackPane prefHeight="400.0" prefWidth="600.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.testproject.MainController">
     <children>
-        <Label layoutX="252.0" layoutY="14.0" text="Send Mode">
-            <font>
-                <Font size="20.0" />
-            </font>
-        </Label>
+        <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
+            <children>
+                <TabPane fx:id="sendModeTabPane" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE">
+                    <tabs>
+                        <Tab text="One to One">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                    <children>
+                                        <Label layoutX="30.0" layoutY="25.0" styleClass="header-label" text="1. Select Device:" />
+                                        <ListView fx:id="peerListViewOne" layoutX="30.0" layoutY="55.0" prefHeight="150.0" prefWidth="250.0" />
+                                    </children>
+                                </AnchorPane>
+                            </content>
+                        </Tab>
+                        <Tab text="One to Many">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                    <children>
+                                        <Label layoutX="30.0" layoutY="25.0" styleClass="header-label" text="1. Select Targets (CMD/CTRL):" />
+                                        <ListView fx:id="peerListViewMany" layoutX="30.0" layoutY="55.0" prefHeight="150.0" prefWidth="250.0" />
+                                    </children>
+                                </AnchorPane>
+                            </content>
+                        </Tab>
+                        <Tab text="To All Devices">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                    <children>
+                                        <Label layoutX="30.0" layoutY="25.0" styleClass="header-label" text="1. Target: All Available Devices" />
+                                        <ListView fx:id="peerListViewAll" layoutX="30.0" layoutY="55.0" prefHeight="150.0" prefWidth="250.0" />
+                                    </children>
+                                </AnchorPane>
+                            </content>
+                        </Tab>
+                    </tabs>
+                </TabPane>
 
-        <Label layoutX="50.0" layoutY="60.0" text="1. Select Device:" />
-        <ListView fx:id="peerListView" layoutX="50.0" layoutY="80.0" prefHeight="120.0" prefWidth="230.0" />
+                <!-- Shifted these elements down by ~30px to account for the tab header offset -->
+                <Label layoutX="320.0" layoutY="55.0" styleClass="header-label" text="2. Selected Files:" />
+                <ListView fx:id="fileListView" layoutX="320.0" layoutY="85.0" prefHeight="150.0" prefWidth="250.0" />
 
-        <Label layoutX="320.0" layoutY="60.0" text="2. Selected Files:" />
-        <ListView fx:id="fileListView" layoutX="320.0" layoutY="80.0" prefHeight="120.0" prefWidth="230.0" />
+                <!-- Shifted the buttons down to fit perfectly beneath the lists -->
+                <Button fx:id="selectFilesButton" layoutX="395.0" layoutY="245.0" mnemonicParsing="false" onAction="#onSelectFilesButtonClicked" text="Select Files" />
+                <Button fx:id="removeFileButton" layoutX="320.0" layoutY="245.0" mnemonicParsing="false" onAction="#onRemoveFileClicked" text="Remove Selected" visible="false" />
+                <Button fx:id="sendFilesButton" layoutX="475.0" layoutY="245.0" mnemonicParsing="false" onAction="#onSendFilesButtonClicked" text="Send Files" visible="false" />
 
-        <!-- Initially Visible -->
-        <Button fx:id="selectFilesButton" layoutX="385.0" layoutY="210.0" mnemonicParsing="false" onAction="#onSelectFilesButtonClicked" text="Select Files" />
+                <ProgressBar fx:id="sendProgressBar" layoutX="150.0" layoutY="290.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" visible="false" />
+                <Label fx:id="sendStatusLabel" alignment="CENTER" layoutX="13.0" layoutY="315.0" prefHeight="17.0" prefWidth="574.0" text="Ready to send" />
 
-        <!-- Initially Hidden -->
-        <Button fx:id="removeFileButton" layoutX="320.0" layoutY="210.0" mnemonicParsing="false" onAction="#onRemoveFileClicked" text="Remove Selected" visible="false" />
-        <Button fx:id="sendFilesButton" layoutX="460.0" layoutY="210.0" mnemonicParsing="false" onAction="#onSendFilesButtonClicked" text="Send Files" visible="false" />
-
-        <ProgressBar fx:id="sendProgressBar" layoutX="150.0" layoutY="260.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" visible="false" />
-        <Label fx:id="sendStatusLabel" alignment="CENTER" layoutX="13.0" layoutY="285.0" prefHeight="17.0" prefWidth="574.0" text="Ready to send" />
-
-        <Button layoutX="231.0" layoutY="330.0" mnemonicParsing="false" onAction="#goToReceiveScene" text="Switch to Receive Mode" />
+                <Button layoutX="220.0" layoutY="350.0" mnemonicParsing="false" onAction="#goToReceiveScene" text="&lt; Back to Receive Mode" />
+            </children>
+        </AnchorPane>
     </children>
-</AnchorPane>
+</StackPane>
