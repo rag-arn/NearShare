@@ -87,7 +87,6 @@ public class MainController {
                 }
             });
         }
-
         if (peerListViewOne != null) {
             peers = FXCollections.observableArrayList();
             peerListViewOne.setItems(peers);
