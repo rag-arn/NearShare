@@ -15,7 +15,6 @@ public class ReceiverTask implements Runnable {
     private ServerSocket serverSocket;
     private volatile boolean isRunning = true;
 
-    // Added ProgressBar to the constructor
     public ReceiverTask(Label statusLabel, ProgressBar progressBar) {
         this.statusLabel = statusLabel;
         this.progressBar = progressBar;
@@ -27,48 +26,58 @@ public class ReceiverTask implements Runnable {
             serverSocket = new ServerSocket(PORT);
             Platform.runLater(() -> {
                 statusLabel.setText("Listening for files...");
-                progressBar.setVisible(false); // Keep hidden while just listening
+                progressBar.setVisible(false);
             });
 
             while (isRunning) {
                 Socket socket = serverSocket.accept();
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
 
-                String fileName = dis.readUTF();
-                long fileSize = dis.readLong();
+                int fileCount = dis.readInt(); // Read how many files are incoming
 
                 Platform.runLater(() -> {
-                    statusLabel.setText("Receiving: " + fileName);
-                    progressBar.setVisible(true); // SHOW the bar when transfer starts
+                    progressBar.setVisible(true);
                     progressBar.setProgress(0.0);
                 });
 
-                File downloadDir = new File("Downloads");
-                if (!downloadDir.exists()) downloadDir.mkdir();
+                for (int i = 0; i < fileCount; i++) {
+                    String fileName = dis.readUTF();
+                    long fileSize = dis.readLong();
+                    final int current = i + 1;
 
-                FileOutputStream fos = new FileOutputStream(new File(downloadDir, fileName));
-                byte[] buffer = new byte[4096];
-                int read;
-                long totalRead = 0;
+                    Platform.runLater(() -> statusLabel.setText("Receiving (" + current + "/" + fileCount + "): " + fileName));
 
-                while ((read = dis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, read);
-                    totalRead += read;
+                    File downloadDir = new File("Downloads");
+                    if (!downloadDir.exists()) downloadDir.mkdir();
 
-                    double progress = (double) totalRead / fileSize;
-                    Platform.runLater(() -> progressBar.setProgress(progress));
+                    FileOutputStream fos = new FileOutputStream(new File(downloadDir, fileName));
+                    byte[] buffer = new byte[4096];
+                    int read;
+                    long totalRead = 0;
+
+                    // Strictly bound the reading to fileSize so files don't bleed into each other
+                    while (totalRead < fileSize) {
+                        int bytesToRead = (int) Math.min(buffer.length, fileSize - totalRead);
+                        read = dis.read(buffer, 0, bytesToRead);
+                        if (read == -1) break;
+
+                        fos.write(buffer, 0, read);
+                        totalRead += read;
+
+                        double progress = (double) totalRead / fileSize;
+                        Platform.runLater(() -> progressBar.setProgress(progress));
+                    }
+                    fos.close();
                 }
-
-                fos.close();
                 dis.close();
                 socket.close();
 
                 Platform.runLater(() -> {
-                    statusLabel.setText("Transfer Complete: " + fileName);
-                    progressBar.setVisible(false); // HIDE the bar when done
+                    statusLabel.setText("All files received successfully!");
+                    progressBar.setVisible(false);
                 });
             }
-        } catch (java.net.SocketException e) {
+        } catch (SocketException e) {
             Platform.runLater(() -> statusLabel.setText("Receive mode is securely OFF."));
         } catch (IOException e) {
             Platform.runLater(() -> {

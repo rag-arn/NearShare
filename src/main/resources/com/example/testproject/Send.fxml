@@ -9,20 +9,28 @@
 
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.testproject.MainController">
     <children>
-        <Label layoutX="252.0" layoutY="28.0" text="Send Mode">
+        <Label layoutX="252.0" layoutY="14.0" text="Send Mode">
             <font>
                 <Font size="20.0" />
             </font>
         </Label>
-        <Label layoutX="150.0" layoutY="65.0" text="Available Devices:" />
-        <ListView fx:id="peerListView" layoutX="150.0" layoutY="85.0" prefHeight="120.0" prefWidth="300.0" />
-        <Button layoutX="245.0" layoutY="220.0" mnemonicParsing="false" onAction="#onSendButtonClicked" text="Select and Send" />
 
-        <!-- New Progress Bar -->
-<!--        <ProgressBar fx:id="sendProgressBar" layoutX="150.0" layoutY="260.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" />-->
+        <Label layoutX="50.0" layoutY="60.0" text="1. Select Device:" />
+        <ListView fx:id="peerListView" layoutX="50.0" layoutY="80.0" prefHeight="120.0" prefWidth="230.0" />
+
+        <Label layoutX="320.0" layoutY="60.0" text="2. Selected Files:" />
+        <ListView fx:id="fileListView" layoutX="320.0" layoutY="80.0" prefHeight="120.0" prefWidth="230.0" />
+
+        <!-- Initially Visible -->
+        <Button fx:id="selectFilesButton" layoutX="385.0" layoutY="210.0" mnemonicParsing="false" onAction="#onSelectFilesButtonClicked" text="Select Files" />
+
+        <!-- Initially Hidden -->
+        <Button fx:id="removeFileButton" layoutX="320.0" layoutY="210.0" mnemonicParsing="false" onAction="#onRemoveFileClicked" text="Remove Selected" visible="false" />
+        <Button fx:id="sendFilesButton" layoutX="460.0" layoutY="210.0" mnemonicParsing="false" onAction="#onSendFilesButtonClicked" text="Send Files" visible="false" />
+
         <ProgressBar fx:id="sendProgressBar" layoutX="150.0" layoutY="260.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" visible="false" />
-
         <Label fx:id="sendStatusLabel" alignment="CENTER" layoutX="13.0" layoutY="285.0" prefHeight="17.0" prefWidth="574.0" text="Ready to send" />
+
         <Button layoutX="231.0" layoutY="330.0" mnemonicParsing="false" onAction="#goToReceiveScene" text="Switch to Receive Mode" />
     </children>
 </AnchorPane>
