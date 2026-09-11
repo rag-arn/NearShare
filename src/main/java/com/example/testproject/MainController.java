@@ -10,6 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ProgressBar;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
 
@@ -18,17 +19,20 @@ import java.io.IOException;
 
 public class MainController {
 
-    @FXML private ListView<String> peerListView; // Replaced TextField with ListView
+    @FXML private ListView<String> peerListView;
     @FXML private Label sendStatusLabel;
     @FXML private Label receiveStatusLabel;
     @FXML private ToggleButton receiveToggle;
+
+    // The new Progress Bar variables
+    @FXML private ProgressBar sendProgressBar;
+    @FXML private ProgressBar receiveProgressBar;
 
     private static ReceiverTask currentReceiverTask;
     private ObservableList<String> peers;
 
     @FXML
     public void initialize() {
-        // If we are on the Receive Scene
         if (receiveToggle != null) {
             receiveToggle.setSelected(true);
             receiveToggle.setText("Receive Mode: ON");
@@ -45,22 +49,22 @@ public class MainController {
             });
         }
 
-        // If we are on the Send Scene
         if (peerListView != null) {
             peers = FXCollections.observableArrayList();
             peerListView.setItems(peers);
-            DiscoveryManager.startListening(peers); // Start actively scanning for peers
+            DiscoveryManager.startListening(peers);
         }
     }
 
     private void startReceiver() {
         stopReceiver();
-        currentReceiverTask = new ReceiverTask(receiveStatusLabel);
+        // Pass the receiveProgressBar to the task
+        currentReceiverTask = new ReceiverTask(receiveStatusLabel, receiveProgressBar);
         Thread receiverThread = new Thread(currentReceiverTask);
         receiverThread.setDaemon(true);
         receiverThread.start();
 
-        DiscoveryManager.startBroadcasting(); // Start shouting IP to the network
+        DiscoveryManager.startBroadcasting();
     }
 
     private void stopReceiver() {
@@ -68,7 +72,7 @@ public class MainController {
             currentReceiverTask.stopListening();
             currentReceiverTask = null;
         }
-        DiscoveryManager.stopBroadcasting(); // Stop shouting
+        DiscoveryManager.stopBroadcasting();
     }
 
     @FXML
@@ -81,7 +85,6 @@ public class MainController {
             return;
         }
 
-        // Extracts just the IP address from "DeviceName (192.168.1.x)"
         String targetIP = selectedPeer.substring(selectedPeer.lastIndexOf("(") + 1, selectedPeer.lastIndexOf(")"));
 
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
@@ -93,11 +96,10 @@ public class MainController {
             return;
         }
 
-        Thread senderThread = new Thread(new SenderTask(targetIP, selectedFile, sendStatusLabel));
+        // Pass the sendProgressBar to the task
+        Thread senderThread = new Thread(new SenderTask(targetIP, selectedFile, sendStatusLabel, sendProgressBar));
         senderThread.start();
     }
-
-    // --- SCENE SWITCHING METHODS ---
 
     @FXML
     public void goToSendScene(ActionEvent event) throws IOException {
@@ -110,7 +112,7 @@ public class MainController {
 
     @FXML
     public void goToReceiveScene(ActionEvent event) throws IOException {
-        DiscoveryManager.stopListening(); // Shut down the scanner before leaving Send Mode
+        DiscoveryManager.stopListening();
         Parent root = FXMLLoader.load(getClass().getResource("Receive.fxml"));
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(new Scene(root));
