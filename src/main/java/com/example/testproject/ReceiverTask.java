@@ -68,6 +68,11 @@ public class ReceiverTask implements Runnable {
                         Platform.runLater(() -> progressBar.setProgress(progress));
                     }
                     fos.close();
+
+                    // --- NEW: LOG INCOMING FILE TO HISTORY ---
+                    String senderIP = socket.getInetAddress().getHostAddress();
+                    HistoryManager.logTransfer("Received", fileName, senderIP);
+                    // -----------------------------------------
                 }
                 dis.close();
                 socket.close();

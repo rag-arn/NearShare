@@ -25,6 +25,9 @@
                 <Label fx:id="receiveStatusLabel" alignment="CENTER" layoutX="14.0" layoutY="220.0" prefHeight="17.0" prefWidth="573.0" text="Initializing..." />
                 <Button layoutX="239.0" layoutY="320.0" mnemonicParsing="false" onAction="#goToSendScene" text="Switch to Send Mode" />
 
+                <!-- NEW HISTORY BUTTON -->
+                <Button fx:id="historyButton" layoutX="500.0" layoutY="15.0" mnemonicParsing="false" onAction="#onHistoryButtonClicked" style="-fx-font-size: 18px; -fx-background-color: transparent; -fx-cursor: hand;" text="🕒" />
+                <!-- PROFILE BUTTON -->
                 <Button fx:id="profileButton" layoutX="540.0" layoutY="15.0" mnemonicParsing="false" onAction="#onProfileButtonClicked" style="-fx-font-size: 18px; -fx-background-color: transparent; -fx-cursor: hand;" text="👤" />
             </children>
         </AnchorPane>

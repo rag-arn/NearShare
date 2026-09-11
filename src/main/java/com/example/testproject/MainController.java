@@ -8,6 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
@@ -29,8 +30,15 @@ public class MainController {
     @FXML private ListView<String> peerListViewOne;
     @FXML private ListView<String> peerListViewMany;
     @FXML private ListView<String> peerListViewAll;
-
     @FXML private ListView<String> fileListView;
+
+    // --- NEW TABLE VIEW VARIABLES ---
+    @FXML private TableView<HistoryRecord> historyTableView;
+    @FXML private TableColumn<HistoryRecord, Integer> colSerial;
+    @FXML private TableColumn<HistoryRecord, String> colFileName;
+    @FXML private TableColumn<HistoryRecord, String> colStatus;
+    @FXML private TableColumn<HistoryRecord, String> colDate;
+    @FXML private TableColumn<HistoryRecord, String> colTime;
 
     @FXML private Label sendStatusLabel;
     @FXML private Label receiveStatusLabel;
@@ -42,6 +50,7 @@ public class MainController {
     @FXML private Button removeFileButton;
     @FXML private Button sendFilesButton;
     @FXML private Button profileButton;
+    @FXML private Button historyButton;
 
     private static ReceiverTask currentReceiverTask;
     private ObservableList<String> peers;
@@ -53,6 +62,17 @@ public class MainController {
     public void initialize() {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
         DiscoveryManager.myDeviceName = prefs.get("deviceName", "ARNOB's Mac");
+
+        // --- MAP THE TABLE COLUMNS TO THE RECORD DATA ---
+        if (historyTableView != null) {
+            colSerial.setCellValueFactory(new PropertyValueFactory<>("serial"));
+            colFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
+            colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+            colDate.setCellValueFactory(new PropertyValueFactory<>("date"));
+            colTime.setCellValueFactory(new PropertyValueFactory<>("time"));
+
+            historyTableView.getItems().addAll(HistoryManager.getHistory());
+        }
 
         if (receiveToggle != null) {
             receiveToggle.setSelected(true);
@@ -95,7 +115,30 @@ public class MainController {
         }
     }
 
-    // --- UPDATED PROFILE BANNER LOGIC ---
+    @FXML
+    public void onHistoryButtonClicked(ActionEvent event) throws IOException {
+        stopReceiver();
+        Parent root = FXMLLoader.load(getClass().getResource("History.fxml"));
+        Scene scene = new Scene(root, 600, 400);
+
+        Scale scale = new Scale(1, 1);
+        scale.xProperty().bind(scene.widthProperty().divide(600));
+        scale.yProperty().bind(scene.heightProperty().divide(400));
+        root.getTransforms().add(scale);
+
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    @FXML
+    public void onClearHistoryClicked(ActionEvent event) {
+        HistoryManager.clearHistory();
+        if (historyTableView != null) {
+            historyTableView.getItems().clear();
+        }
+    }
+
     @FXML
     public void onProfileButtonClicked(ActionEvent event) {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
@@ -104,11 +147,8 @@ public class MainController {
         Dialog<Void> profileBanner = new Dialog<>();
         profileBanner.setTitle("Profile");
         profileBanner.setHeaderText("Device Information");
-
-        // Make the banner exactly 2/3 of the 600x400 window size
         profileBanner.getDialogPane().setPrefSize(400, 266);
 
-        // Center everything and make the font larger
         VBox vbox = new VBox(20);
         vbox.setStyle("-fx-padding: 20px;");
         vbox.setAlignment(Pos.CENTER);
@@ -172,7 +212,6 @@ public class MainController {
             }
         }
     }
-    // --- END PROFILE BANNER LOGIC ---
 
     private void startReceiver() {
         stopReceiver();
@@ -252,6 +291,12 @@ public class MainController {
 
         for (String peer : targetPeers) {
             String targetIP = peer.substring(peer.lastIndexOf("(") + 1, peer.lastIndexOf(")"));
+
+            for (File f : filesToTransfer) {
+                // Sent Status applied here
+                HistoryManager.logTransfer("Sent", f.getName(), peer);
+            }
+
             Thread senderThread = new Thread(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
             senderThread.start();
         }

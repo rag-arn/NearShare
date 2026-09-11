@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.text.Font?>
+
+<StackPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.testproject.MainController">
+    <children>
+        <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
+            <children>
+                <Label layoutX="210.0" layoutY="25.0" text="Transfer History">
+                    <font>
+                        <Font name="System Bold" size="24.0" />
+                    </font>
+                </Label>
+
+                <!-- NEW TABLE VIEW -->
+                <TableView fx:id="historyTableView" layoutX="30.0" layoutY="70.0" prefHeight="250.0" prefWidth="540.0">
+                    <columns>
+                        <TableColumn fx:id="colSerial" prefWidth="50.0" text="Serial" />
+                        <TableColumn fx:id="colFileName" prefWidth="210.0" text="File Name" />
+                        <TableColumn fx:id="colStatus" prefWidth="90.0" text="Status" />
+                        <TableColumn fx:id="colDate" prefWidth="100.0" text="Date" />
+                        <TableColumn fx:id="colTime" prefWidth="88.0" text="Time" />
+                    </columns>
+                </TableView>
+
+                <Button layoutX="450.0" layoutY="340.0" mnemonicParsing="false" onAction="#onClearHistoryClicked" text="Clear History" textFill="#c62828" />
+
+                <Button layoutX="30.0" layoutY="340.0" mnemonicParsing="false" onAction="#goToReceiveScene" text="&lt; Back to Receive Mode" />
+            </children>
+        </AnchorPane>
+    </children>
+</StackPane>
