@@ -74,15 +74,15 @@ public class MainController {
 
         if (receiveToggle != null) {
             receiveToggle.setSelected(true);
-            receiveToggle.setText("Receive Mode: ON");
+            receiveToggle.setText("Receiver Mode");
             startReceiver();
 
             receiveToggle.setOnAction(event -> {
                 if (receiveToggle.isSelected()) {
-                    receiveToggle.setText("Receive Mode: ON");
+                    receiveToggle.setText("Receiver Mode");
                     startReceiver();
                 } else {
-                    receiveToggle.setText("Receive Mode: OFF");
+                    receiveToggle.setText("Turn on Receiver Mode");
                     stopReceiver();
                 }
             });

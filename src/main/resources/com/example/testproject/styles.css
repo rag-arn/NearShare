@@ -1,17 +1,17 @@
-/* Premium Crisp Background to make the Burgundy Logo visible */
+/* Premium Crisp Background */
 .root {
     -fx-background-color: linear-gradient(to bottom right, #FFFFFF, #F2EFEF);
     -fx-font-family: "System";
 }
 
-/* Base Text Color: Dark Slate for readability */
+/* Base Text Color */
 .label {
     -fx-text-fill: #333333;
     -fx-font-size: 14px;
 }
 
-/* Button & Toggle Button Styling (Your Custom Burgundy) */
-.button, .toggle-button {
+/* Standard Button Styling (Burgundy) */
+.button {
     -fx-background-color: #720028;
     -fx-text-fill: #FFFFFF;
     -fx-font-weight: bold;
@@ -23,18 +23,34 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
 }
 
-/* Button Hover State (Slightly darker burgundy) */
-.button:hover, .toggle-button:hover {
+.button:hover {
     -fx-background-color: #55001E;
 }
 
-/* Active/ON State for the Receive Toggle */
+/* Toggle Button - OFF State (Ash Color) */
+.toggle-button {
+    -fx-background-color: #9E9E9E;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
+}
+
+.toggle-button:hover {
+    -fx-background-color: #757575;
+}
+
+/* Toggle Button - ON State (Burgundy Logo Color) */
 .toggle-button:selected {
-    -fx-background-color: #9E0038;
+    -fx-background-color: #720028;
     -fx-text-fill: #FFFFFF;
 }
 
-/* Transparent Icon Buttons (For your new PNG icons) */
+/* Transparent Icon Buttons */
 .icon-button {
     -fx-background-color: transparent;
     -fx-effect: none;
@@ -47,7 +63,7 @@
     -fx-scale-y: 1.1;
 }
 
-/* Progress Bar Styling (Burgundy on Light Track) */
+/* Progress Bar Styling */
 .progress-bar > .bar {
     -fx-background-color: #720028;
     -fx-background-radius: 4px;
