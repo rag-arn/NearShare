@@ -2,22 +2,24 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.testproject.MainController">
     <children>
-        <Label layoutX="252.0" layoutY="46.0" text="Send Mode">
+        <Label layoutX="252.0" layoutY="28.0" text="Send Mode">
             <font>
                 <Font size="20.0" />
             </font>
         </Label>
-        <TextField fx:id="targetIpField" layoutX="216.0" layoutY="108.0" promptText="Target IP address" />
-        <Button layoutX="245.0" layoutY="155.0" mnemonicParsing="false" onAction="#onSendButtonClicked" text="Select and Send" />
-        <Label fx:id="sendStatusLabel" alignment="CENTER" layoutX="13.0" layoutY="213.0" prefHeight="17.0" prefWidth="574.0" text="Ready to send" />
 
-        <!-- Navigation Button -->
+        <Label layoutX="150.0" layoutY="65.0" text="Available Devices:" />
+        <ListView fx:id="peerListView" layoutX="150.0" layoutY="85.0" prefHeight="140.0" prefWidth="300.0" />
+
+        <Button layoutX="245.0" layoutY="240.0" mnemonicParsing="false" onAction="#onSendButtonClicked" text="Select and Send" />
+        <Label fx:id="sendStatusLabel" alignment="CENTER" layoutX="13.0" layoutY="280.0" prefHeight="17.0" prefWidth="574.0" text="Ready to send" />
+
         <Button layoutX="231.0" layoutY="321.0" mnemonicParsing="false" onAction="#goToReceiveScene" text="Switch to Receive Mode" />
     </children>
 </AnchorPane>

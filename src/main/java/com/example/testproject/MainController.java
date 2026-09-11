@@ -1,12 +1,14 @@
 package com.example.testproject;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ToggleButton;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
@@ -16,17 +18,17 @@ import java.io.IOException;
 
 public class MainController {
 
-    @FXML private TextField targetIpField;
+    @FXML private ListView<String> peerListView; // Replaced TextField with ListView
     @FXML private Label sendStatusLabel;
     @FXML private Label receiveStatusLabel;
     @FXML private ToggleButton receiveToggle;
 
-    // Made static so it persists safely across scene changes
     private static ReceiverTask currentReceiverTask;
+    private ObservableList<String> peers;
 
     @FXML
     public void initialize() {
-        // We check if receiveToggle is not null, meaning we are currently on the Receive Scene
+        // If we are on the Receive Scene
         if (receiveToggle != null) {
             receiveToggle.setSelected(true);
             receiveToggle.setText("Receive Mode: ON");
@@ -42,14 +44,23 @@ public class MainController {
                 }
             });
         }
+
+        // If we are on the Send Scene
+        if (peerListView != null) {
+            peers = FXCollections.observableArrayList();
+            peerListView.setItems(peers);
+            DiscoveryManager.startListening(peers); // Start actively scanning for peers
+        }
     }
 
     private void startReceiver() {
-        stopReceiver(); // Always ensure any old thread is dead before starting a new one
+        stopReceiver();
         currentReceiverTask = new ReceiverTask(receiveStatusLabel);
         Thread receiverThread = new Thread(currentReceiverTask);
         receiverThread.setDaemon(true);
         receiverThread.start();
+
+        DiscoveryManager.startBroadcasting(); // Start shouting IP to the network
     }
 
     private void stopReceiver() {
@@ -57,21 +68,25 @@ public class MainController {
             currentReceiverTask.stopListening();
             currentReceiverTask = null;
         }
+        DiscoveryManager.stopBroadcasting(); // Stop shouting
     }
 
     @FXML
     public void onSendButtonClicked(ActionEvent event) {
-        if (targetIpField == null) return;
+        if (peerListView == null) return;
 
-        String targetIP = targetIpField.getText();
-        if (targetIP.isEmpty()) {
-            sendStatusLabel.setText("Please enter an IP address.");
+        String selectedPeer = peerListView.getSelectionModel().getSelectedItem();
+        if (selectedPeer == null) {
+            sendStatusLabel.setText("Please select a device from the list.");
             return;
         }
 
+        // Extracts just the IP address from "DeviceName (192.168.1.x)"
+        String targetIP = selectedPeer.substring(selectedPeer.lastIndexOf("(") + 1, selectedPeer.lastIndexOf(")"));
+
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.setTitle("Select a file to send");
-        File selectedFile = fileChooser.showOpenDialog(targetIpField.getScene().getWindow());
+        File selectedFile = fileChooser.showOpenDialog(peerListView.getScene().getWindow());
 
         if (selectedFile == null) {
             sendStatusLabel.setText("Transfer cancelled.");
@@ -86,7 +101,7 @@ public class MainController {
 
     @FXML
     public void goToSendScene(ActionEvent event) throws IOException {
-        stopReceiver(); // CRITICAL: Frees up Port 8080 before leaving the scene
+        stopReceiver();
         Parent root = FXMLLoader.load(getClass().getResource("Send.fxml"));
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(new Scene(root));
@@ -95,6 +110,7 @@ public class MainController {
 
     @FXML
     public void goToReceiveScene(ActionEvent event) throws IOException {
+        DiscoveryManager.stopListening(); // Shut down the scanner before leaving Send Mode
         Parent root = FXMLLoader.load(getClass().getResource("Receive.fxml"));
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(new Scene(root));
