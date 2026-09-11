@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
 import javafx.scene.transform.Scale;
+import javafx.geometry.Pos;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,40 +95,42 @@ public class MainController {
         }
     }
 
-    // --- NEW PROFILE BANNER LOGIC ---
+    // --- UPDATED PROFILE BANNER LOGIC ---
     @FXML
     public void onProfileButtonClicked(ActionEvent event) {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
         String currentName = prefs.get("deviceName", "ARNOB's Mac");
 
-        // 1. Create the Profile Banner
         Dialog<Void> profileBanner = new Dialog<>();
         profileBanner.setTitle("Profile");
         profileBanner.setHeaderText("Device Information");
 
-        // Setup the layout inside the banner
-        VBox vbox = new VBox(15);
-        vbox.setStyle("-fx-padding: 10px; -fx-font-size: 14px;");
+        // Make the banner exactly 2/3 of the 600x400 window size
+        profileBanner.getDialogPane().setPrefSize(400, 266);
+
+        // Center everything and make the font larger
+        VBox vbox = new VBox(20);
+        vbox.setStyle("-fx-padding: 20px;");
+        vbox.setAlignment(Pos.CENTER);
 
         Label nameLabel = new Label("Device Name: " + currentName);
-        nameLabel.setStyle("-fx-font-weight: bold;");
+        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
         Label ipLabel = new Label("IP Address: " + getLocalIpAddress());
-        ipLabel.setStyle("-fx-font-weight: bold;");
+        ipLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #555555;");
 
         Button changeNameBtn = new Button("Change Device Name");
+        changeNameBtn.setStyle("-fx-font-size: 14px; -fx-padding: 8px 16px;");
 
         vbox.getChildren().addAll(nameLabel, ipLabel, changeNameBtn);
         profileBanner.getDialogPane().setContent(vbox);
         profileBanner.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
-        // 2. Action when "Change Device Name" is clicked
         changeNameBtn.setOnAction(e -> {
             TextInputDialog renameDialog = new TextInputDialog(prefs.get("deviceName", "ARNOB's Mac"));
             renameDialog.setTitle("Change Device Name");
             renameDialog.setHeaderText("Enter your new device name:");
 
-            // Change the default OK button text to "Rename"
             Button renameButton = (Button) renameDialog.getDialogPane().lookupButton(ButtonType.OK);
             if (renameButton != null) {
                 renameButton.setText("Rename");
@@ -139,7 +142,6 @@ public class MainController {
                 String trimmedName = newName.trim();
                 if (!trimmedName.isEmpty() && !trimmedName.equals(prefs.get("deviceName", ""))) {
 
-                    // 3. Confirmation Alert Box
                     Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
                     confirmAlert.setTitle("Confirm Change");
                     confirmAlert.setHeaderText(null);
@@ -147,7 +149,6 @@ public class MainController {
 
                     Optional<ButtonType> confirmResult = confirmAlert.showAndWait();
                     if (confirmResult.isPresent() && confirmResult.get() == ButtonType.OK) {
-                        // Apply the changes to the network, system, and the active banner UI
                         DiscoveryManager.myDeviceName = trimmedName;
                         prefs.put("deviceName", trimmedName);
                         nameLabel.setText("Device Name: " + trimmedName);
@@ -156,11 +157,9 @@ public class MainController {
             });
         });
 
-        // Show the banner
         profileBanner.showAndWait();
     }
 
-    // Helper method to accurately find your Mac's true LAN IP address
     private String getLocalIpAddress() {
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
