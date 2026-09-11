@@ -8,17 +8,22 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
+import javafx.scene.transform.Scale;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.prefs.Preferences;
 
 public class MainController {
 
-    // The new TabPane and its 3 variations of the peer list
     @FXML private TabPane sendModeTabPane;
     @FXML private ListView<String> peerListViewOne;
     @FXML private ListView<String> peerListViewMany;
@@ -35,6 +40,7 @@ public class MainController {
     @FXML private Button selectFilesButton;
     @FXML private Button removeFileButton;
     @FXML private Button sendFilesButton;
+    @FXML private Button profileButton;
 
     private static ReceiverTask currentReceiverTask;
     private ObservableList<String> peers;
@@ -44,6 +50,9 @@ public class MainController {
 
     @FXML
     public void initialize() {
+        Preferences prefs = Preferences.userNodeForPackage(MainController.class);
+        DiscoveryManager.myDeviceName = prefs.get("deviceName", "ARNOB's Mac");
+
         if (receiveToggle != null) {
             receiveToggle.setSelected(true);
             receiveToggle.setText("Receive Mode: ON");
@@ -60,24 +69,23 @@ public class MainController {
             });
         }
 
-        // Initialize the 3 Send Tabs if we are on the Send Scene
         if (peerListViewOne != null) {
             peers = FXCollections.observableArrayList();
 
-            // Bind all 3 lists to the exact same live network data
             peerListViewOne.setItems(peers);
             peerListViewMany.setItems(peers);
             peerListViewAll.setItems(peers);
 
-            // Tab 2: Allow holding CMD/CTRL to select multiple devices
             peerListViewMany.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
-            // Tab 3: Disable clicking entirely (it just targets everyone in the list)
             peerListViewAll.setMouseTransparent(true);
             peerListViewAll.setFocusTraversable(false);
 
             fileListView.setItems(displayFileNames);
             DiscoveryManager.startListening(peers);
+
+            selectFilesButton.managedProperty().bind(selectFilesButton.visibleProperty());
+            removeFileButton.managedProperty().bind(removeFileButton.visibleProperty());
+            sendFilesButton.managedProperty().bind(sendFilesButton.visibleProperty());
 
             removeFileButton.setDisable(true);
             fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
@@ -85,6 +93,87 @@ public class MainController {
             });
         }
     }
+
+    // --- NEW PROFILE BANNER LOGIC ---
+    @FXML
+    public void onProfileButtonClicked(ActionEvent event) {
+        Preferences prefs = Preferences.userNodeForPackage(MainController.class);
+        String currentName = prefs.get("deviceName", "ARNOB's Mac");
+
+        // 1. Create the Profile Banner
+        Dialog<Void> profileBanner = new Dialog<>();
+        profileBanner.setTitle("Profile");
+        profileBanner.setHeaderText("Device Information");
+
+        // Setup the layout inside the banner
+        VBox vbox = new VBox(15);
+        vbox.setStyle("-fx-padding: 10px; -fx-font-size: 14px;");
+
+        Label nameLabel = new Label("Device Name: " + currentName);
+        nameLabel.setStyle("-fx-font-weight: bold;");
+
+        Label ipLabel = new Label("IP Address: " + getLocalIpAddress());
+        ipLabel.setStyle("-fx-font-weight: bold;");
+
+        Button changeNameBtn = new Button("Change Device Name");
+
+        vbox.getChildren().addAll(nameLabel, ipLabel, changeNameBtn);
+        profileBanner.getDialogPane().setContent(vbox);
+        profileBanner.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        // 2. Action when "Change Device Name" is clicked
+        changeNameBtn.setOnAction(e -> {
+            TextInputDialog renameDialog = new TextInputDialog(prefs.get("deviceName", "ARNOB's Mac"));
+            renameDialog.setTitle("Change Device Name");
+            renameDialog.setHeaderText("Enter your new device name:");
+
+            // Change the default OK button text to "Rename"
+            Button renameButton = (Button) renameDialog.getDialogPane().lookupButton(ButtonType.OK);
+            if (renameButton != null) {
+                renameButton.setText("Rename");
+            }
+
+            Optional<String> result = renameDialog.showAndWait();
+
+            result.ifPresent(newName -> {
+                String trimmedName = newName.trim();
+                if (!trimmedName.isEmpty() && !trimmedName.equals(prefs.get("deviceName", ""))) {
+
+                    // 3. Confirmation Alert Box
+                    Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                    confirmAlert.setTitle("Confirm Change");
+                    confirmAlert.setHeaderText(null);
+                    confirmAlert.setContentText("Are you sure you want to change your device name to '" + trimmedName + "'?");
+
+                    Optional<ButtonType> confirmResult = confirmAlert.showAndWait();
+                    if (confirmResult.isPresent() && confirmResult.get() == ButtonType.OK) {
+                        // Apply the changes to the network, system, and the active banner UI
+                        DiscoveryManager.myDeviceName = trimmedName;
+                        prefs.put("deviceName", trimmedName);
+                        nameLabel.setText("Device Name: " + trimmedName);
+                    }
+                }
+            });
+        });
+
+        // Show the banner
+        profileBanner.showAndWait();
+    }
+
+    // Helper method to accurately find your Mac's true LAN IP address
+    private String getLocalIpAddress() {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+            return socket.getLocalAddress().getHostAddress();
+        } catch (Exception e) {
+            try {
+                return InetAddress.getLocalHost().getHostAddress();
+            } catch (Exception ex) {
+                return "Unknown IP";
+            }
+        }
+    }
+    // --- END PROFILE BANNER LOGIC ---
 
     private void startReceiver() {
         stopReceiver();
@@ -108,7 +197,9 @@ public class MainController {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.setTitle("Select files to send");
 
-        List<File> chosenFiles = fileChooser.showOpenMultipleDialog(sendModeTabPane.getScene().getWindow());
+        List<File> chosenFiles = fileChooser.showOpenMultipleDialog(
+                (sendModeTabPane != null) ? sendModeTabPane.getScene().getWindow() : null
+        );
 
         if (chosenFiles != null && !chosenFiles.isEmpty()) {
             for (File f : chosenFiles) {
@@ -142,18 +233,14 @@ public class MainController {
 
         List<String> targetPeers = new ArrayList<>();
 
-        // Determine which targeting logic to use based on the active tab
         int activeTab = sendModeTabPane.getSelectionModel().getSelectedIndex();
 
         if (activeTab == 0) {
-            // One to One
             String selected = peerListViewOne.getSelectionModel().getSelectedItem();
             if (selected != null) targetPeers.add(selected);
         } else if (activeTab == 1) {
-            // One to Many
             targetPeers.addAll(peerListViewMany.getSelectionModel().getSelectedItems());
         } else if (activeTab == 2) {
-            // One to All Devices
             targetPeers.addAll(peers);
         }
 
@@ -164,11 +251,10 @@ public class MainController {
 
         List<File> filesToTransfer = new ArrayList<>(selectedFilesData);
 
-        // Spawn a parallel background thread for EVERY target device
         for (String peer : targetPeers) {
             String targetIP = peer.substring(peer.lastIndexOf("(") + 1, peer.lastIndexOf(")"));
             Thread senderThread = new Thread(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
-            senderThread.start(); // Operating system handles them simultaneously!
+            senderThread.start();
         }
 
         selectedFilesData.clear();
@@ -180,8 +266,15 @@ public class MainController {
     public void goToSendScene(ActionEvent event) throws IOException {
         stopReceiver();
         Parent root = FXMLLoader.load(getClass().getResource("Send.fxml"));
+        Scene scene = new Scene(root, 600, 400);
+
+        Scale scale = new Scale(1, 1);
+        scale.xProperty().bind(scene.widthProperty().divide(600));
+        scale.yProperty().bind(scene.heightProperty().divide(400));
+        root.getTransforms().add(scale);
+
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(new Scene(root));
+        stage.setScene(scene);
         stage.show();
     }
 
@@ -189,8 +282,15 @@ public class MainController {
     public void goToReceiveScene(ActionEvent event) throws IOException {
         DiscoveryManager.stopListening();
         Parent root = FXMLLoader.load(getClass().getResource("Receive.fxml"));
+        Scene scene = new Scene(root, 600, 400);
+
+        Scale scale = new Scale(1, 1);
+        scale.xProperty().bind(scene.widthProperty().divide(600));
+        scale.yProperty().bind(scene.heightProperty().divide(400));
+        root.getTransforms().add(scale);
+
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(new Scene(root));
+        stage.setScene(scene);
         stage.show();
     }
 }

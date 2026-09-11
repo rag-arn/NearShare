@@ -2,88 +2,109 @@ package com.example.testproject;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
-import java.net.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 
 public class DiscoveryManager {
-    private static final int DISCOVERY_PORT = 8888;
-    private static final String IDENTIFIER = "NEARSHARE_RECEIVER";
 
-    private static Thread broadcastThread;
-    private static Thread listenThread;
-    private static AtomicBoolean isBroadcasting = new AtomicBoolean(false);
-    private static AtomicBoolean isListening = new AtomicBoolean(false);
+    private static DatagramSocket broadcastSocket;
     private static DatagramSocket listenSocket;
+    private static volatile boolean isBroadcasting = false;
+    private static volatile boolean isListening = false;
 
-    // Called when toggled to Receive Mode
+    public static String myDeviceName = "ARNOB's Mac";
+
     public static void startBroadcasting() {
-        if (isBroadcasting.get()) return;
-        isBroadcasting.set(true);
+        if (isBroadcasting) return;
+        isBroadcasting = true;
 
-        broadcastThread = new Thread(() -> {
-            try (DatagramSocket socket = new DatagramSocket()) {
-                socket.setBroadcast(true);
-                String hostName = InetAddress.getLocalHost().getHostName(); // Gets your computer's name
-                String message = IDENTIFIER + ":" + hostName;
-                byte[] data = message.getBytes();
-                InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
+        Thread t = new Thread(() -> {
+            try {
+                broadcastSocket = new DatagramSocket();
+                broadcastSocket.setBroadcast(true);
 
-                while (isBroadcasting.get()) {
-                    DatagramPacket packet = new DatagramPacket(data, data.length, broadcastAddress, DISCOVERY_PORT);
-                    socket.send(packet);
-                    Thread.sleep(2000); // Shouts its presence every 2 seconds
+                while (isBroadcasting) {
+                    String message = "NEARSHARE:" + myDeviceName;
+                    byte[] buffer = message.getBytes();
+
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName("255.255.255.255"), 8888);
+                    broadcastSocket.send(packet);
+
+                    Thread.sleep(1500);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                // Ignore sleep interruptions or socket closures
             }
         });
-        broadcastThread.setDaemon(true);
-        broadcastThread.start();
+        t.setDaemon(true);
+        t.start();
     }
 
-    public static void stopBroadcasting() {
-        isBroadcasting.set(false);
-    }
+    public static void startListening(ObservableList<String> peers) {
+        if (isListening) return;
+        isListening = true;
 
-    // Called when switching to Send Mode
-    public static void startListening(ObservableList<String> peerList) {
-        if (isListening.get()) return;
-        isListening.set(true);
-
-        listenThread = new Thread(() -> {
+        Thread t = new Thread(() -> {
             try {
-                listenSocket = new DatagramSocket(DISCOVERY_PORT);
+                listenSocket = new DatagramSocket(8888);
                 byte[] buffer = new byte[1024];
 
-                while (isListening.get()) {
+                while (isListening) {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     listenSocket.receive(packet);
 
                     String message = new String(packet.getData(), 0, packet.getLength());
-                    String senderIP = packet.getAddress().getHostAddress();
 
-                    if (message.startsWith(IDENTIFIER)) {
-                        String deviceName = message.split(":")[1];
-                        String displayString = deviceName + " (" + senderIP + ")";
+                    if (message.startsWith("NEARSHARE:")) {
+                        String senderName = message.substring(10).trim();
+                        String ip = packet.getAddress().getHostAddress();
 
-                        // Safely update the JavaFX UI
+                        String displayString = senderName + " (" + ip + ")";
+                        String ipSuffix = "(" + ip + ")";
+
                         Platform.runLater(() -> {
-                            if (!peerList.contains(displayString)) {
-                                peerList.add(displayString);
+                            boolean ipFound = false;
+
+                            // Check if this IP is already in the list
+                            for (int i = 0; i < peers.size(); i++) {
+                                if (peers.get(i).endsWith(ipSuffix)) {
+                                    ipFound = true;
+                                    // If the name changed, update it in place!
+                                    if (!peers.get(i).equals(displayString)) {
+                                        peers.set(i, displayString);
+                                    }
+                                    break;
+                                }
+                            }
+
+                            if (!ipFound) {
+                                peers.add(displayString);
                             }
                         });
                     }
                 }
+            } catch (SocketException e) {
+                // Socket was closed intentionally
             } catch (Exception e) {
-                // Expected when socket is forced closed
+                e.printStackTrace();
             }
         });
-        listenThread.setDaemon(true);
-        listenThread.start();
+        t.setDaemon(true);
+        t.start();
+    }
+
+    public static void stopBroadcasting() {
+        isBroadcasting = false;
+        if (broadcastSocket != null && !broadcastSocket.isClosed()) {
+            broadcastSocket.close();
+        }
     }
 
     public static void stopListening() {
-        isListening.set(false);
+        isListening = false;
         if (listenSocket != null && !listenSocket.isClosed()) {
             listenSocket.close();
         }
