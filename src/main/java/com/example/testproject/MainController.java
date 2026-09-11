@@ -9,10 +9,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
-import javafx.scene.transform.Scale;
 import javafx.geometry.Pos;
 
 import java.io.File;
@@ -32,7 +33,6 @@ public class MainController {
     @FXML private ListView<String> peerListViewAll;
     @FXML private ListView<String> fileListView;
 
-    // --- NEW TABLE VIEW VARIABLES ---
     @FXML private TableView<HistoryRecord> historyTableView;
     @FXML private TableColumn<HistoryRecord, Integer> colSerial;
     @FXML private TableColumn<HistoryRecord, String> colFileName;
@@ -63,14 +63,12 @@ public class MainController {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
         DiscoveryManager.myDeviceName = prefs.get("deviceName", "ARNOB's Mac");
 
-        // --- MAP THE TABLE COLUMNS TO THE RECORD DATA ---
         if (historyTableView != null) {
             colSerial.setCellValueFactory(new PropertyValueFactory<>("serial"));
             colFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
             colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
             colDate.setCellValueFactory(new PropertyValueFactory<>("date"));
             colTime.setCellValueFactory(new PropertyValueFactory<>("time"));
-
             historyTableView.getItems().addAll(HistoryManager.getHistory());
         }
 
@@ -92,7 +90,6 @@ public class MainController {
 
         if (peerListViewOne != null) {
             peers = FXCollections.observableArrayList();
-
             peerListViewOne.setItems(peers);
             peerListViewMany.setItems(peers);
             peerListViewAll.setItems(peers);
@@ -113,22 +110,6 @@ public class MainController {
                 removeFileButton.setDisable(newVal == null);
             });
         }
-    }
-
-    @FXML
-    public void onHistoryButtonClicked(ActionEvent event) throws IOException {
-        stopReceiver();
-        Parent root = FXMLLoader.load(getClass().getResource("History.fxml"));
-        Scene scene = new Scene(root, 600, 400);
-
-        Scale scale = new Scale(1, 1);
-        scale.xProperty().bind(scene.widthProperty().divide(600));
-        scale.yProperty().bind(scene.heightProperty().divide(400));
-        root.getTransforms().add(scale);
-
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(scene);
-        stage.show();
     }
 
     @FXML
@@ -181,7 +162,6 @@ public class MainController {
             result.ifPresent(newName -> {
                 String trimmedName = newName.trim();
                 if (!trimmedName.isEmpty() && !trimmedName.equals(prefs.get("deviceName", ""))) {
-
                     Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
                     confirmAlert.setTitle("Confirm Change");
                     confirmAlert.setHeaderText(null);
@@ -270,7 +250,6 @@ public class MainController {
         if (selectedFilesData.isEmpty()) return;
 
         List<String> targetPeers = new ArrayList<>();
-
         int activeTab = sendModeTabPane.getSelectionModel().getSelectedIndex();
 
         if (activeTab == 0) {
@@ -291,12 +270,9 @@ public class MainController {
 
         for (String peer : targetPeers) {
             String targetIP = peer.substring(peer.lastIndexOf("(") + 1, peer.lastIndexOf(")"));
-
             for (File f : filesToTransfer) {
-                // Sent Status applied here
                 HistoryManager.logTransfer("Sent", f.getName(), peer);
             }
-
             Thread senderThread = new Thread(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
             senderThread.start();
         }
@@ -306,35 +282,53 @@ public class MainController {
         updateButtonVisibility();
     }
 
-    @FXML
-    public void goToSendScene(ActionEvent event) throws IOException {
-        stopReceiver();
-        Parent root = FXMLLoader.load(getClass().getResource("Send.fxml"));
-        Scene scene = new Scene(root, 600, 400);
+    // --- FLAWLESS SCALING FIX ---
+    private void applyPerfectScalingAndSwitch(ActionEvent event, String fxmlFile) throws IOException {
+        Parent fxmlRoot = FXMLLoader.load(getClass().getResource(fxmlFile));
 
-        Scale scale = new Scale(1, 1);
-        scale.xProperty().bind(scene.widthProperty().divide(600));
-        scale.yProperty().bind(scene.heightProperty().divide(400));
-        root.getTransforms().add(scale);
+        if (fxmlRoot instanceof Region) {
+            Region region = (Region) fxmlRoot;
+            region.setMinSize(600, 400);
+            region.setPrefSize(600, 400);
+            region.setMaxSize(600, 400);
+        }
+
+        StackPane outerWrapper = new StackPane(fxmlRoot);
+        outerWrapper.setStyle("-fx-background-color: #F3F4F6;");
 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        double currentWidth = stage.getScene().getWidth();
+        double currentHeight = stage.getScene().getHeight();
+
+        Scene scene = new Scene(outerWrapper, currentWidth, currentHeight);
+
+        javafx.beans.binding.DoubleBinding scaleBinding = javafx.beans.binding.Bindings.createDoubleBinding(
+                () -> Math.min(scene.getWidth() / 600.0, scene.getHeight() / 400.0),
+                scene.widthProperty(), scene.heightProperty()
+        );
+
+        fxmlRoot.scaleXProperty().bind(scaleBinding);
+        fxmlRoot.scaleYProperty().bind(scaleBinding);
+
         stage.setScene(scene);
         stage.show();
     }
 
     @FXML
+    public void goToSendScene(ActionEvent event) throws IOException {
+        stopReceiver();
+        applyPerfectScalingAndSwitch(event, "Send.fxml");
+    }
+
+    @FXML
     public void goToReceiveScene(ActionEvent event) throws IOException {
         DiscoveryManager.stopListening();
-        Parent root = FXMLLoader.load(getClass().getResource("Receive.fxml"));
-        Scene scene = new Scene(root, 600, 400);
+        applyPerfectScalingAndSwitch(event, "Receive.fxml");
+    }
 
-        Scale scale = new Scale(1, 1);
-        scale.xProperty().bind(scene.widthProperty().divide(600));
-        scale.yProperty().bind(scene.heightProperty().divide(400));
-        root.getTransforms().add(scale);
-
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(scene);
-        stage.show();
+    @FXML
+    public void onHistoryButtonClicked(ActionEvent event) throws IOException {
+        stopReceiver();
+        applyPerfectScalingAndSwitch(event, "History.fxml");
     }
 }

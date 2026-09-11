@@ -13,7 +13,11 @@
     <children>
         <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
             <children>
-                <TabPane fx:id="sendModeTabPane" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE">
+                <!-- Back Button at the top left -->
+                <Button layoutX="14.0" layoutY="12.0" mnemonicParsing="false" onAction="#goToReceiveScene" text="Back" />
+
+                <!-- TabPane height adjusted to 300 to prevent overlapping with bottom elements -->
+                <TabPane fx:id="sendModeTabPane" layoutY="50.0" prefHeight="300.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE">
                     <tabs>
                         <Tab text="One to One">
                             <content>
@@ -48,19 +52,17 @@
                     </tabs>
                 </TabPane>
 
-                <!-- Shifted these elements down by ~30px to account for the tab header offset -->
-                <Label layoutX="320.0" layoutY="55.0" styleClass="header-label" text="2. Selected Files:" />
-                <ListView fx:id="fileListView" layoutX="320.0" layoutY="85.0" prefHeight="150.0" prefWidth="250.0" />
+                <Label layoutX="320.0" layoutY="106.0" styleClass="header-label" text="2. Selected Files:" />
+                <ListView fx:id="fileListView" layoutX="322.0" layoutY="135.0" prefHeight="150.0" prefWidth="250.0" />
 
-                <!-- Shifted the buttons down to fit perfectly beneath the lists -->
-                <Button fx:id="selectFilesButton" layoutX="395.0" layoutY="245.0" mnemonicParsing="false" onAction="#onSelectFilesButtonClicked" text="Select Files" />
-                <Button fx:id="removeFileButton" layoutX="320.0" layoutY="245.0" mnemonicParsing="false" onAction="#onRemoveFileClicked" text="Remove Selected" visible="false" />
-                <Button fx:id="sendFilesButton" layoutX="475.0" layoutY="245.0" mnemonicParsing="false" onAction="#onSendFilesButtonClicked" text="Send Files" visible="false" />
+                <!-- Buttons moved up cleanly beneath the 150px list view -->
+                <Button fx:id="selectFilesButton" layoutX="395.0" layoutY="295.0" mnemonicParsing="false" onAction="#onSelectFilesButtonClicked" text="Select Files" />
+                <Button fx:id="removeFileButton" layoutX="320.0" layoutY="295.0" mnemonicParsing="false" onAction="#onRemoveFileClicked" text="Remove Selected" visible="false" />
+                <Button fx:id="sendFilesButton" layoutX="475.0" layoutY="295.0" mnemonicParsing="false" onAction="#onSendFilesButtonClicked" text="Send Files" visible="false" />
 
-                <ProgressBar fx:id="sendProgressBar" layoutX="150.0" layoutY="290.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" visible="false" />
-                <Label fx:id="sendStatusLabel" alignment="CENTER" layoutX="13.0" layoutY="315.0" prefHeight="17.0" prefWidth="574.0" text="Ready to send" />
-
-                <Button layoutX="220.0" layoutY="350.0" mnemonicParsing="false" onAction="#goToReceiveScene" text="&lt; Back to Receive Mode" />
+                <!-- Progress bar and Status Label spaced perfectly below the buttons -->
+                <ProgressBar fx:id="sendProgressBar" layoutX="150.0" layoutY="335.0" prefHeight="18.0" prefWidth="300.0" progress="0.0" visible="false" />
+                <Label fx:id="sendStatusLabel" alignment="CENTER" layoutX="13.0" layoutY="365.0" prefHeight="17.0" prefWidth="574.0" text="Ready to send" />
             </children>
         </AnchorPane>
     </children>
