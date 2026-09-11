@@ -1,60 +1,18 @@
-//package com.example.testproject;
-//
-//import javafx.fxml.FXML;
-//import javafx.scene.control.Label;
-//import javafx.scene.control.TextField;
-//import javafx.event.ActionEvent;
-//import java.io.File;
-//import java.io.FileWriter;
-//import java.io.IOException;
-//
-//public class MainController {
-//
-//    @FXML private TextField targetIpField;
-//    @FXML private Label statusLabel;
-//
-//    @FXML
-//    public void initialize() {
-//        // Starts the Receiver thread automatically when the UI loads
-//        Thread receiverThread = new Thread(new ReceiverTask(statusLabel));
-//        receiverThread.setDaemon(true); // Ensures the thread dies when you close the app
-//        receiverThread.start();
-//    }
-//
-//    @FXML
-//    public void onSendButtonClicked(javafx.event.ActionEvent event) {
-//        String targetIP = targetIpField.getText();
-//
-//        if (targetIP.isEmpty()) {
-//            statusLabel.setText("Please enter an IP address.");
-//            return;
-//        }
-//
-//        // Launch the native macOS file picker dialog
-//        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
-//        fileChooser.setTitle("Select a file to send");
-//        java.io.File selectedFile = fileChooser.showOpenDialog(targetIpField.getScene().getWindow());
-//
-//        // Stop execution gracefully if you close the finder window without picking anything
-//        if (selectedFile == null) {
-//            statusLabel.setText("Transfer cancelled.");
-//            return;
-//        }
-//
-//        // Trigger the background network thread with the actual file you selected
-//        Thread senderThread = new Thread(new SenderTask(targetIP, selectedFile, statusLabel));
-//        senderThread.start();
-//    }
-//}
-
 package com.example.testproject;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.event.ActionEvent;
+import javafx.stage.Stage;
+
 import java.io.File;
+import java.io.IOException;
 
 public class MainController {
 
@@ -63,28 +21,31 @@ public class MainController {
     @FXML private Label receiveStatusLabel;
     @FXML private ToggleButton receiveToggle;
 
-    private ReceiverTask currentReceiverTask;
+    // Made static so it persists safely across scene changes
+    private static ReceiverTask currentReceiverTask;
 
     @FXML
     public void initialize() {
-        // Automatically start in Receive Mode when the app opens
-        receiveToggle.setSelected(true);
-        receiveToggle.setText("Receive Mode: ON");
-        startReceiver();
+        // We check if receiveToggle is not null, meaning we are currently on the Receive Scene
+        if (receiveToggle != null) {
+            receiveToggle.setSelected(true);
+            receiveToggle.setText("Receive Mode: ON");
+            startReceiver();
 
-        // Listen for when the user clicks the toggle
-        receiveToggle.setOnAction(event -> {
-            if (receiveToggle.isSelected()) {
-                receiveToggle.setText("Receive Mode: ON");
-                startReceiver();
-            } else {
-                receiveToggle.setText("Receive Mode: OFF");
-                stopReceiver();
-            }
-        });
+            receiveToggle.setOnAction(event -> {
+                if (receiveToggle.isSelected()) {
+                    receiveToggle.setText("Receive Mode: ON");
+                    startReceiver();
+                } else {
+                    receiveToggle.setText("Receive Mode: OFF");
+                    stopReceiver();
+                }
+            });
+        }
     }
 
     private void startReceiver() {
+        stopReceiver(); // Always ensure any old thread is dead before starting a new one
         currentReceiverTask = new ReceiverTask(receiveStatusLabel);
         Thread receiverThread = new Thread(currentReceiverTask);
         receiverThread.setDaemon(true);
@@ -94,13 +55,15 @@ public class MainController {
     private void stopReceiver() {
         if (currentReceiverTask != null) {
             currentReceiverTask.stopListening();
+            currentReceiverTask = null;
         }
     }
 
     @FXML
     public void onSendButtonClicked(ActionEvent event) {
-        String targetIP = targetIpField.getText();
+        if (targetIpField == null) return;
 
+        String targetIP = targetIpField.getText();
         if (targetIP.isEmpty()) {
             sendStatusLabel.setText("Please enter an IP address.");
             return;
@@ -117,5 +80,24 @@ public class MainController {
 
         Thread senderThread = new Thread(new SenderTask(targetIP, selectedFile, sendStatusLabel));
         senderThread.start();
+    }
+
+    // --- SCENE SWITCHING METHODS ---
+
+    @FXML
+    public void goToSendScene(ActionEvent event) throws IOException {
+        stopReceiver(); // CRITICAL: Frees up Port 8080 before leaving the scene
+        Parent root = FXMLLoader.load(getClass().getResource("Send.fxml"));
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.setScene(new Scene(root));
+        stage.show();
+    }
+
+    @FXML
+    public void goToReceiveScene(ActionEvent event) throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("Receive.fxml"));
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.setScene(new Scene(root));
+        stage.show();
     }
 }
