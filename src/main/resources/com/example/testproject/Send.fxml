@@ -80,7 +80,7 @@
                                                         <Tab text="One">
                                                             <content><ListView fx:id="peerListViewOne" /></content>
                                                         </Tab>
-                                                        <Tab text="Many">
+                                                        <Tab text="Multiple">
                                                             <content><ListView fx:id="peerListViewMany" /></content>
                                                         </Tab>
                                                         <Tab text="All">
