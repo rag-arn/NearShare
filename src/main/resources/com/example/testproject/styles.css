@@ -5,7 +5,7 @@
 
 .main-background {
     -fx-background-color: transparent;
-    -fx-background-image: url("background.jpg");
+    -fx-background-image: url("background.png");
     -fx-background-size: cover;
     -fx-background-position: center center;
     -fx-background-repeat: no-repeat;
