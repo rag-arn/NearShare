@@ -9,6 +9,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -46,6 +47,9 @@ public class MainController {
     @FXML private ProgressBar sendProgressBar;
     @FXML private ProgressBar receiveProgressBar;
 
+    // The new animated GIF node
+    @FXML private ImageView loadingAnimation;
+
     @FXML private Button selectFilesButton;
     @FXML private Button removeFileButton;
     @FXML private Button sendFilesButton;
@@ -77,6 +81,17 @@ public class MainController {
             receiveToggle.setText("Receiver Mode");
             startReceiver();
 
+            // Bind the GIF visibility directly to the toggle and progress bar states
+            if (loadingAnimation != null && receiveProgressBar != null) {
+                // Ensure the layout collapses and expands seamlessly without leaving empty gaps
+                loadingAnimation.managedProperty().bind(loadingAnimation.visibleProperty());
+
+                // Visible ONLY if toggle is on AND progress bar is hidden
+                loadingAnimation.visibleProperty().bind(
+                        receiveToggle.selectedProperty().and(receiveProgressBar.visibleProperty().not())
+                );
+            }
+
             receiveToggle.setOnAction(event -> {
                 if (receiveToggle.isSelected()) {
                     receiveToggle.setText("Receiver Mode");
@@ -87,6 +102,7 @@ public class MainController {
                 }
             });
         }
+
         if (peerListViewOne != null) {
             peers = FXCollections.observableArrayList();
             peerListViewOne.setItems(peers);
@@ -129,22 +145,18 @@ public class MainController {
         profileBanner.setHeaderText("Device Information");
         profileBanner.getDialogPane().setPrefSize(400, 266);
 
-        // Link CSS to the Profile Dialog
         profileBanner.getDialogPane().getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
 
         VBox vbox = new VBox(20);
         vbox.setStyle("-fx-padding: 20px;");
         vbox.setAlignment(Pos.CENTER);
 
-        // Enlarged text with space before colon
         Label nameLabel = new Label("Device Name : " + currentName);
         nameLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-font-size: 22px;");
 
-        // Added space before colon
         Label ipLabel = new Label("IP Address : " + getLocalIpAddress());
         ipLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // Smaller button dimensions and smaller font size
         Button changeNameBtn = new Button("Change Device Name");
         changeNameBtn.getStyleClass().add("secondary-pill-button");
         changeNameBtn.setStyle("-fx-padding: 6px 16px; -fx-font-size: 13px;");
@@ -158,7 +170,6 @@ public class MainController {
             renameDialog.setTitle("Change Device Name");
             renameDialog.setHeaderText("Enter your new device name :");
 
-            // Link CSS to the Rename Dialog
             renameDialog.getDialogPane().getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
 
             Button renameButton = (Button) renameDialog.getDialogPane().lookupButton(ButtonType.OK);
@@ -176,7 +187,6 @@ public class MainController {
                     confirmAlert.setHeaderText(null);
                     confirmAlert.setContentText("Are you sure you want to change your device name to '" + trimmedName + "'?");
 
-                    // Link CSS to the Confirmation Alert
                     confirmAlert.getDialogPane().getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
 
                     Optional<ButtonType> confirmResult = confirmAlert.showAndWait();

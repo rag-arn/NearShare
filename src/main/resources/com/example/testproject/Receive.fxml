@@ -44,14 +44,22 @@
                                     </graphic>
                                 </ToggleButton>
 
-                                <HBox alignment="CENTER" spacing="10.0">
+                                <VBox alignment="CENTER" spacing="10.0">
                                     <children>
-                                        <Circle radius="5.0" styleClass="status-dot" />
-                                        <Label fx:id="receiveStatusLabel" styleClass="status-text" text="Listening for files..." />
-                                    </children>
-                                </HBox>
 
-                                <ProgressBar fx:id="receiveProgressBar" prefHeight="8.0" prefWidth="450.0" progress="0.0" visible="false" />
+                                        <HBox alignment="CENTER" spacing="10.0">
+                                            <children>
+                                                <ImageView fx:id="loadingAnimation" blendMode="SCREEN" fitHeight="80.0" fitWidth="80.0" pickOnBounds="true" preserveRatio="true">
+                                                    <image><Image url="@loading.gif" /></image>
+                                                </ImageView>
+
+                                                <Label fx:id="receiveStatusLabel" styleClass="status-text" text="Listening for files..." />
+                                            </children>
+                                        </HBox>
+
+                                        <ProgressBar fx:id="receiveProgressBar" prefHeight="8.0" prefWidth="450.0" progress="0.0" visible="false" />
+                                    </children>
+                                </VBox>
 
                                 <Button mnemonicParsing="false" onAction="#goToSendScene" prefHeight="70.0" prefWidth="480.0" styleClass="secondary-pill-button" text="Switch to Send Mode">
                                     <graphic>
