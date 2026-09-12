@@ -281,28 +281,28 @@ public class MainController {
         updateButtonVisibility();
     }
 
-    // --- FLAWLESS SCALING FIX ---
     private void applyPerfectScalingAndSwitch(ActionEvent event, String fxmlFile) throws IOException {
         Parent fxmlRoot = FXMLLoader.load(getClass().getResource(fxmlFile));
 
         if (fxmlRoot instanceof Region) {
             Region region = (Region) fxmlRoot;
-            region.setMinSize(600, 400);
-            region.setPrefSize(600, 400);
-            region.setMaxSize(600, 400);
+            region.setMinSize(1280, 720);
+            region.setPrefSize(1280, 720);
+            region.setMaxSize(1280, 720);
         }
 
         StackPane outerWrapper = new StackPane(fxmlRoot);
-        outerWrapper.setStyle("-fx-background-color: #F3F4F6;");
+        outerWrapper.setStyle("-fx-background-color: #050102;");
 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        double currentWidth = stage.getScene().getWidth();
-        double currentHeight = stage.getScene().getHeight();
 
-        Scene scene = new Scene(outerWrapper, currentWidth, currentHeight);
+        double targetWidth = Math.max(stage.getWidth(), 1280.0);
+        double targetHeight = Math.max(stage.getHeight(), 720.0);
+
+        Scene scene = new Scene(outerWrapper, targetWidth, targetHeight);
 
         javafx.beans.binding.DoubleBinding scaleBinding = javafx.beans.binding.Bindings.createDoubleBinding(
-                () -> Math.min(scene.getWidth() / 600.0, scene.getHeight() / 400.0),
+                () -> Math.min(scene.getWidth() / 1280.0, scene.getHeight() / 720.0),
                 scene.widthProperty(), scene.heightProperty()
         );
 
@@ -310,6 +310,8 @@ public class MainController {
         fxmlRoot.scaleYProperty().bind(scaleBinding);
 
         stage.setScene(scene);
+        stage.setWidth(targetWidth);
+        stage.setHeight(targetHeight);
         stage.show();
     }
 
