@@ -47,15 +47,21 @@ public class SenderTask implements Runnable {
                 int read;
                 long totalSent = 0;
 
+                long lastUpdate = 0;
                 while ((read = fis.read(buffer)) > 0) {
                     dos.write(buffer, 0, read);
                     totalSent += read;
 
-                    double progress = (double) totalSent / fileSize;
-                    Platform.runLater(() -> progressBar.setProgress(progress));
+                    long now = System.currentTimeMillis();
+                    if (now - lastUpdate > 50 || totalSent == fileSize) {
+                        lastUpdate = now;
+                        double progress = fileSize == 0 ? 1.0 : (double) totalSent / fileSize;
+                        Platform.runLater(() -> progressBar.setProgress(progress));
+                    }
                 }
                 fis.close();
             }
+            dos.flush();
             dos.close();
 
             Platform.runLater(() -> {
