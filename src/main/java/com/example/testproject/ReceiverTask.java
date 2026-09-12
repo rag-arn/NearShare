@@ -46,10 +46,12 @@ public class ReceiverTask implements Runnable {
                         long fileSize = dis.readLong();
                         final int current = i + 1;
 
-                        Platform.runLater(() -> statusLabel.setText("Receiving (" + current + "/" + fileCount + "): " + fileName));
+                        Platform.runLater(() -> statusLabel
+                                .setText("Receiving (" + current + "/" + fileCount + "): " + fileName));
 
                         File downloadDir = new File("Downloads");
-                        if (!downloadDir.exists()) downloadDir.mkdir();
+                        if (!downloadDir.exists())
+                            downloadDir.mkdir();
 
                         FileOutputStream fos = new FileOutputStream(new File(downloadDir, fileName));
                         byte[] buffer = new byte[4096];
@@ -61,7 +63,8 @@ public class ReceiverTask implements Runnable {
                         while (totalRead < fileSize) {
                             int bytesToRead = (int) Math.min(buffer.length, fileSize - totalRead);
                             read = dis.read(buffer, 0, bytesToRead);
-                            if (read == -1) break;
+                            if (read == -1)
+                                break;
 
                             fos.write(buffer, 0, read);
                             totalRead += read;
