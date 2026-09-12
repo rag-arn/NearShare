@@ -61,7 +61,7 @@ public class MainController {
     @FXML
     public void initialize() {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
-        DiscoveryManager.myDeviceName = prefs.get("deviceName", "ARNOB's Mac");
+        DiscoveryManager.myDeviceName = prefs.get("deviceName", "Ragib's MacBook");
 
         if (historyTableView != null) {
             colSerial.setCellValueFactory(new PropertyValueFactory<>("serial"));
@@ -122,34 +122,44 @@ public class MainController {
     @FXML
     public void onProfileButtonClicked(ActionEvent event) {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
-        String currentName = prefs.get("deviceName", "ARNOB's Mac");
+        String currentName = prefs.get("deviceName", "Ragib's MacBook");
 
         Dialog<Void> profileBanner = new Dialog<>();
         profileBanner.setTitle("Profile");
         profileBanner.setHeaderText("Device Information");
         profileBanner.getDialogPane().setPrefSize(400, 266);
 
+        // Link CSS to the Profile Dialog
+        profileBanner.getDialogPane().getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+
         VBox vbox = new VBox(20);
         vbox.setStyle("-fx-padding: 20px;");
         vbox.setAlignment(Pos.CENTER);
 
-        Label nameLabel = new Label("Device Name: " + currentName);
-        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+        // Enlarged text with space before colon
+        Label nameLabel = new Label("Device Name : " + currentName);
+        nameLabel.setStyle("-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-font-size: 22px;");
 
-        Label ipLabel = new Label("IP Address: " + getLocalIpAddress());
-        ipLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #555555;");
+        // Added space before colon
+        Label ipLabel = new Label("IP Address : " + getLocalIpAddress());
+        ipLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-weight: bold; -fx-font-size: 14px;");
 
+        // Smaller button dimensions and smaller font size
         Button changeNameBtn = new Button("Change Device Name");
-        changeNameBtn.setStyle("-fx-font-size: 14px; -fx-padding: 8px 16px;");
+        changeNameBtn.getStyleClass().add("secondary-pill-button");
+        changeNameBtn.setStyle("-fx-padding: 6px 16px; -fx-font-size: 13px;");
 
         vbox.getChildren().addAll(nameLabel, ipLabel, changeNameBtn);
         profileBanner.getDialogPane().setContent(vbox);
         profileBanner.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
         changeNameBtn.setOnAction(e -> {
-            TextInputDialog renameDialog = new TextInputDialog(prefs.get("deviceName", "ARNOB's Mac"));
+            TextInputDialog renameDialog = new TextInputDialog(prefs.get("deviceName", "Ragib's MacBook"));
             renameDialog.setTitle("Change Device Name");
-            renameDialog.setHeaderText("Enter your new device name:");
+            renameDialog.setHeaderText("Enter your new device name :");
+
+            // Link CSS to the Rename Dialog
+            renameDialog.getDialogPane().getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
 
             Button renameButton = (Button) renameDialog.getDialogPane().lookupButton(ButtonType.OK);
             if (renameButton != null) {
@@ -166,11 +176,14 @@ public class MainController {
                     confirmAlert.setHeaderText(null);
                     confirmAlert.setContentText("Are you sure you want to change your device name to '" + trimmedName + "'?");
 
+                    // Link CSS to the Confirmation Alert
+                    confirmAlert.getDialogPane().getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+
                     Optional<ButtonType> confirmResult = confirmAlert.showAndWait();
                     if (confirmResult.isPresent() && confirmResult.get() == ButtonType.OK) {
                         DiscoveryManager.myDeviceName = trimmedName;
                         prefs.put("deviceName", trimmedName);
-                        nameLabel.setText("Device Name: " + trimmedName);
+                        nameLabel.setText("Device Name : " + trimmedName);
                     }
                 }
             });
