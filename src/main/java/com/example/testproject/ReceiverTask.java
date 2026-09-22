@@ -20,6 +20,18 @@ public class ReceiverTask implements Runnable {
         this.progressBar = progressBar;
     }
 
+    // Lets MainController re-point this already-running task at the
+    // Label/ProgressBar of a freshly reloaded Receive screen, instead of
+    // killing the socket and starting a brand new ReceiverTask.
+    public void attachUI(Label statusLabel, ProgressBar progressBar) {
+        this.statusLabel = statusLabel;
+        this.progressBar = progressBar;
+        Platform.runLater(() -> {
+            statusLabel.setText(isRunning ? "Listening for files..." : "Receive mode is securely OFF.");
+            progressBar.setVisible(false);
+        });
+    }
+
     @Override
     public void run() {
         try {
@@ -30,9 +42,8 @@ public class ReceiverTask implements Runnable {
             });
 
             while (isRunning) {
-                try {
-                    Socket socket = serverSocket.accept();
-                    DataInputStream dis = new DataInputStream(socket.getInputStream());
+                try (Socket socket = serverSocket.accept();
+                     DataInputStream dis = new DataInputStream(socket.getInputStream())) {
 
                     int fileCount = dis.readInt(); // Read how many files are incoming
 
@@ -50,42 +61,42 @@ public class ReceiverTask implements Runnable {
                                 .setText("Receiving (" + current + "/" + fileCount + "): " + fileName));
 
                         File downloadDir = new File("Downloads");
-                        if (!downloadDir.exists())
-                            downloadDir.mkdir();
-
-                        FileOutputStream fos = new FileOutputStream(new File(downloadDir, fileName));
-                        byte[] buffer = new byte[4096];
-                        int read;
-                        long totalRead = 0;
-                        long lastUpdate = 0;
-
-                        // Strictly bound the reading to fileSize so files don't bleed into each other
-                        while (totalRead < fileSize) {
-                            int bytesToRead = (int) Math.min(buffer.length, fileSize - totalRead);
-                            read = dis.read(buffer, 0, bytesToRead);
-                            if (read == -1)
-                                break;
-
-                            fos.write(buffer, 0, read);
-                            totalRead += read;
-
-                            long now = System.currentTimeMillis();
-                            if (now - lastUpdate > 50 || totalRead == fileSize) {
-                                lastUpdate = now;
-                                double progress = fileSize == 0 ? 1.0 : (double) totalRead / fileSize;
-                                Platform.runLater(() -> progressBar.setProgress(progress));
-                            }
+                        if (!downloadDir.exists()) {
+                            downloadDir.mkdirs();
                         }
-                        fos.flush();
-                        fos.close();
+
+                        // Try-with-resources for file output stream
+                        try (FileOutputStream fos = new FileOutputStream(new File(downloadDir, fileName))) {
+                            byte[] buffer = new byte[4096];
+                            int read;
+                            long totalRead = 0;
+                            long lastUpdate = 0;
+
+                            // Strictly bound the reading to fileSize so files don't bleed into each other
+                            while (totalRead < fileSize) {
+                                int bytesToRead = (int) Math.min(buffer.length, fileSize - totalRead);
+                                read = dis.read(buffer, 0, bytesToRead);
+                                if (read == -1)
+                                    break;
+
+                                fos.write(buffer, 0, read);
+                                totalRead += read;
+
+                                long now = System.currentTimeMillis();
+                                if (now - lastUpdate > 50 || totalRead == fileSize) {
+                                    lastUpdate = now;
+                                    double progress = fileSize == 0 ? 1.0 : (double) totalRead / fileSize;
+                                    Platform.runLater(() -> progressBar.setProgress(progress));
+                                }
+                            }
+                            fos.flush();
+                        }
 
                         // --- NEW: LOG INCOMING FILE TO HISTORY ---
                         String senderIP = socket.getInetAddress().getHostAddress();
                         HistoryManager.logTransfer("Received", fileName, senderIP);
                         // -----------------------------------------
                     }
-                    dis.close();
-                    socket.close();
 
                     Platform.runLater(() -> {
                         statusLabel.setText("All files received successfully!");
@@ -100,8 +111,9 @@ public class ReceiverTask implements Runnable {
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    final String errorMsg = e.getMessage();
                     Platform.runLater(() -> {
-                        statusLabel.setText("Network Error during transfer: " + e.getMessage());
+                        statusLabel.setText("Error during transfer: " + errorMsg);
                         progressBar.setVisible(false);
                     });
                 }

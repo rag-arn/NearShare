@@ -65,7 +65,7 @@ public class MainController {
     @FXML
     public void initialize() {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
-        DiscoveryManager.myDeviceName = prefs.get("deviceName", "Ragib's MacBook");
+        DiscoveryManager.myDeviceName = prefs.get("deviceName", DiscoveryManager.getDefaultDeviceName());
 
         if (historyTableView != null) {
             colSerial.setCellValueFactory(new PropertyValueFactory<>("serial"));
@@ -138,7 +138,7 @@ public class MainController {
     @FXML
     public void onProfileButtonClicked(ActionEvent event) {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
-        String currentName = prefs.get("deviceName", "Ragib's MacBook");
+        String currentName = prefs.get("deviceName", DiscoveryManager.getDefaultDeviceName());
 
         Dialog<Void> profileBanner = new Dialog<>();
         profileBanner.setTitle("Profile");
@@ -166,7 +166,7 @@ public class MainController {
         profileBanner.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
         changeNameBtn.setOnAction(e -> {
-            TextInputDialog renameDialog = new TextInputDialog(prefs.get("deviceName", "Ragib's MacBook"));
+            TextInputDialog renameDialog = new TextInputDialog(prefs.get("deviceName", DiscoveryManager.getDefaultDeviceName()));
             renameDialog.setTitle("Change Device Name");
             renameDialog.setHeaderText("Enter your new device name :");
 
@@ -216,7 +216,13 @@ public class MainController {
     }
 
     private void startReceiver() {
-        stopReceiver();
+        // If a receiver is already running (started on a previous screen),
+        // don't kill it - just point it at this screen's UI controls.
+        if (currentReceiverTask != null) {
+            currentReceiverTask.attachUI(receiveStatusLabel, receiveProgressBar);
+            DiscoveryManager.startBroadcasting(); // no-op if already broadcasting
+            return;
+        }
         currentReceiverTask = new ReceiverTask(receiveStatusLabel, receiveProgressBar);
         Thread receiverThread = new Thread(currentReceiverTask);
         receiverThread.setDaemon(true);
@@ -340,7 +346,10 @@ public class MainController {
 
     @FXML
     public void goToSendScene(ActionEvent event) throws IOException {
-        stopReceiver();
+        // NOTE: we intentionally do NOT call stopReceiver() here anymore.
+        // Leaving the Receive screen should not turn off your ability to
+        // receive files or be discovered - that was the bug where files
+        // couldn't be sent to a device that had merely navigated away.
         applyPerfectScalingAndSwitch(event, "Send.fxml");
     }
 
@@ -352,7 +361,6 @@ public class MainController {
 
     @FXML
     public void onHistoryButtonClicked(ActionEvent event) throws IOException {
-        stopReceiver();
         applyPerfectScalingAndSwitch(event, "History.fxml");
     }
 }
