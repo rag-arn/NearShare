@@ -28,7 +28,7 @@
                             <image><Image url="@Logo2.png" /></image>
                         </ImageView>
 
-                        <Label styleClass="footer-tagline" text="Share files. Stay close." />
+                        <Label styleClass="footer-tagline" text="Share Across. Go Limitless" />
 
                         <VBox alignment="CENTER" maxWidth="550.0" prefWidth="550.0" spacing="30.0" styleClass="glass-card">
                             <VBox.margin>
