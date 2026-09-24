@@ -18,7 +18,26 @@ public class DiscoveryManager {
     private static volatile boolean isBroadcasting = false;
     private static volatile boolean isListening = false;
 
-    public static String myDeviceName = "ARNOB's Mac";
+    public static String getDefaultDeviceName() {
+        try {
+            String hostName = java.net.InetAddress.getLocalHost().getHostName();
+            if (hostName != null && !hostName.trim().isEmpty()) {
+                if (hostName.endsWith(".local")) {
+                    hostName = hostName.substring(0, hostName.length() - 6);
+                }
+                return hostName;
+            }
+        } catch (Exception e) {
+            // Ignored, fallback below
+        }
+        return System.getProperty("user.name") + "'s Device";
+    }
+
+    public static String myDeviceName = getDefaultDeviceName();
+
+    // Unique per-launch ID so we can tell our own broadcasts apart from a
+    // genuinely different device, even if it has the same device name.
+    private static final String INSTANCE_ID = java.util.UUID.randomUUID().toString();
 
     // NEW: Tracks the exact millisecond we last heard from a specific device
     private static ConcurrentHashMap<String, Long> lastSeen = new ConcurrentHashMap<>();
@@ -33,11 +52,36 @@ public class DiscoveryManager {
                 broadcastSocket.setBroadcast(true);
 
                 while (isBroadcasting) {
-                    String message = "NEARSHARE:" + myDeviceName;
+                    String message = "NEARSHARE:" + INSTANCE_ID + "|" + myDeviceName;
                     byte[] buffer = message.getBytes();
 
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName("255.255.255.255"), 8888);
-                    broadcastSocket.send(packet);
+                    // 1. Try to broadcast over all specific subnet broadcast addresses
+                    try {
+                        java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface.getNetworkInterfaces();
+                        while (interfaces.hasMoreElements()) {
+                            java.net.NetworkInterface networkInterface = interfaces.nextElement();
+                            if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                                continue;
+                            }
+                            for (java.net.InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                                InetAddress broadcast = interfaceAddress.getBroadcast();
+                                if (broadcast != null) {
+                                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, broadcast, 8888);
+                                    broadcastSocket.send(packet);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // ignore
+                    }
+
+                    // 2. Also try the generic broadcast as a fallback
+                    try {
+                        DatagramPacket fallbackPacket = new DatagramPacket(buffer, buffer.length, InetAddress.getByName("255.255.255.255"), 8888);
+                        broadcastSocket.send(fallbackPacket);
+                    } catch (Exception e) {
+                        // ignore
+                    }
 
                     Thread.sleep(1500); // Ping out every 1.5 seconds
                 }
@@ -57,7 +101,9 @@ public class DiscoveryManager {
         // 1. The Receiver Thread (Listens for incoming pings)
         Thread receiverThread = new Thread(() -> {
             try {
-                listenSocket = new DatagramSocket(8888);
+                listenSocket = new DatagramSocket(null);
+                listenSocket.setReuseAddress(true);
+                listenSocket.bind(new java.net.InetSocketAddress(8888));
                 byte[] buffer = new byte[1024];
 
                 while (isListening) {
@@ -67,7 +113,19 @@ public class DiscoveryManager {
                     String message = new String(packet.getData(), 0, packet.getLength());
 
                     if (message.startsWith("NEARSHARE:")) {
-                        String senderName = message.substring(10).trim();
+                        String payload = message.substring(10); // strip "NEARSHARE:"
+                        int sep = payload.indexOf('|');
+                        if (sep < 0) continue; // malformed/old-format packet, ignore
+
+                        String senderInstanceId = payload.substring(0, sep);
+                        if (senderInstanceId.equals(INSTANCE_ID)) {
+                            // This is our own broadcast bouncing back (loopback broadcast
+                            // delivery, or received on another local interface). Skip it
+                            // so we never appear as a peer in our own list.
+                            continue;
+                        }
+
+                        String senderName = payload.substring(sep + 1).trim();
                         String ip = packet.getAddress().getHostAddress();
 
                         String displayString = senderName + " (" + ip + ")";

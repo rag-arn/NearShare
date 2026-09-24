@@ -47,7 +47,7 @@
                                 <VBox alignment="CENTER" spacing="10.0">
                                     <children>
 
-                                        <HBox alignment="CENTER" spacing="10.0">
+                                        <HBox alignment="CENTER" minHeight="70.0" spacing="10.0">
                                             <children>
                                                 <ImageView fx:id="loadingAnimation" blendMode="SCREEN" fitHeight="70.0" fitWidth="70.0" pickOnBounds="true" preserveRatio="true">
                                                     <image><Image url="@loading.gif" /></image>
