@@ -10,7 +10,7 @@
         <AnchorPane maxWidth="Infinity" maxHeight="Infinity">
             <children>
 
-                <!-- Top Left Logo -->
+                <!-- Top Left Logo (First child, identical to Send.fxml) -->
                 <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="35.0">
                     <children>
                         <ImageView fitHeight="28.0" fitWidth="120.0" pickOnBounds="true" preserveRatio="true">
@@ -27,10 +27,24 @@
                         <VBox alignment="CENTER" maxWidth="1000.0" prefWidth="1000.0" spacing="25.0" styleClass="glass-card">
                             <children>
 
-                                <Label style="-fx-text-fill: #FFFFFF; -fx-font-size: 24px; -fx-font-weight: bold;" text="Transfer History" />
+                                <AnchorPane>
+                                    <children>
+                                        <Label alignment="CENTER" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" style="-fx-text-fill: #FFFFFF; -fx-font-size: 24px; -fx-font-weight: bold;" text="Transfer History" />
+                                        <HBox spacing="15.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" alignment="CENTER">
+                                            <children>
+                                                <Button fx:id="importHistoryButton" mnemonicParsing="false" onAction="#onImportHistoryClicked" styleClass="circular-icon-button">
+                                                    <graphic><ImageView fitHeight="24.0" fitWidth="24.0" mouseTransparent="true" pickOnBounds="true" preserveRatio="true"><image><Image url="@import.png" /></image></ImageView></graphic>
+                                                </Button>
+                                                <Button fx:id="exportHistoryButton" mnemonicParsing="false" onAction="#onExportHistoryClicked" styleClass="circular-icon-button">
+                                                    <graphic><ImageView fitHeight="24.0" fitWidth="24.0" mouseTransparent="true" pickOnBounds="true" preserveRatio="true"><image><Image url="@export.png" /></image></ImageView></graphic>
+                                                </Button>
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </AnchorPane>
 
-                                <!-- Scaled up TableView -->
-                                <TableView fx:id="historyTableView" minHeight="420.0" prefHeight="420.0" maxHeight="420.0">
+                                <!-- Scaled down TableView height slightly to stop layout from squishing buttons and logo -->
+                                <TableView fx:id="historyTableView" minHeight="350.0" prefHeight="350.0" maxHeight="350.0">
                                     <columns>
                                         <TableColumn fx:id="colSerial" prefWidth="80.0" text="Serial" />
                                         <TableColumn fx:id="colFileName" prefWidth="380.0" text="File Name" />
@@ -46,13 +60,19 @@
                                     </VBox.margin>
                                 </TableView>
 
-                                <!-- Bottom Buttons -->
-                                <HBox spacing="30.0" alignment="CENTER">
+                                <!-- Bottom Buttons (Sized exactly identical to Send.fxml reference with minHeight lock) -->
+                                <HBox spacing="20.0" alignment="CENTER">
                                     <children>
-                                        <Button mnemonicParsing="false" onAction="#goToReceiveScene" prefHeight="55.0" prefWidth="300.0" styleClass="secondary-pill-button" text="&lt; Back to Receiver Mode" />
+                                        <Button mnemonicParsing="false" onAction="#goToReceiveScene" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="secondary-pill-button" text="Switch to Receiver Mode">
+                                            <graphic>
+                                                <ImageView fitHeight="20.0" fitWidth="20.0" mouseTransparent="true" pickOnBounds="true" preserveRatio="true">
+                                                    <image><Image url="@receive.png" /></image>
+                                                </ImageView>
+                                            </graphic>
+                                        </Button>
 
                                         <!-- Clear History uses the glossy burgundy action button style -->
-                                        <Button mnemonicParsing="false" onAction="#onClearHistoryClicked" prefHeight="55.0" prefWidth="300.0" styleClass="primary-action-button" text="Clear History" />
+                                        <Button mnemonicParsing="false" onAction="#onClearHistoryClicked" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="primary-action-button" text="Clear History" />
                                     </children>
                                 </HBox>
 
@@ -61,6 +81,7 @@
 
                     </children>
                 </VBox>
+
             </children>
         </AnchorPane>
     </children>

@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.prefs.Preferences;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.io.IOException;
 
 public class MainController {
 
@@ -216,17 +219,14 @@ public class MainController {
     }
 
     private void startReceiver() {
-        // If a receiver is already running (started on a previous screen),
-        // don't kill it - just point it at this screen's UI controls.
         if (currentReceiverTask != null) {
             currentReceiverTask.attachUI(receiveStatusLabel, receiveProgressBar);
-            DiscoveryManager.startBroadcasting(); // no-op if already broadcasting
+            DiscoveryManager.startBroadcasting();
             return;
         }
         currentReceiverTask = new ReceiverTask(receiveStatusLabel, receiveProgressBar);
-        Thread receiverThread = new Thread(currentReceiverTask);
-        receiverThread.setDaemon(true);
-        receiverThread.start();
+        // Offload to general executor pool
+        AppExecutors.getGeneralExecutor().submit(currentReceiverTask);
         DiscoveryManager.startBroadcasting();
     }
 
@@ -301,13 +301,14 @@ public class MainController {
             for (File f : filesToTransfer) {
                 HistoryManager.logTransfer("Sent", f.getName(), peer);
             }
-            Thread senderThread = new Thread(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
-            senderThread.start();
+            // Offload to general executor pool
+            AppExecutors.getGeneralExecutor().submit(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
         }
 
         selectedFilesData.clear();
         displayFileNames.clear();
         updateButtonVisibility();
+
     }
 
     private void applyPerfectScalingAndSwitch(ActionEvent event, String fxmlFile) throws IOException {
@@ -362,5 +363,41 @@ public class MainController {
     @FXML
     public void onHistoryButtonClicked(ActionEvent event) throws IOException {
         applyPerfectScalingAndSwitch(event, "History.fxml");
+    }
+
+    @FXML
+    private void onExportHistoryClicked() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export History");
+        fileChooser.setInitialFileName("nearshare_history.json");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+
+        File file = fileChooser.showSaveDialog(historyTableView.getScene().getWindow());
+        if (file == null) return;
+
+        try {
+            HistoryExportManager.exportToFile(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void onImportHistoryClicked() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import History");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+
+        File file = fileChooser.showOpenDialog(historyTableView.getScene().getWindow());
+        if (file == null) return;
+
+        try {
+            HistoryExportManager.importFromFile(file);
+            historyTableView.getItems().setAll(HistoryManager.getHistory());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
