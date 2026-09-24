@@ -25,7 +25,6 @@ public class NearShare extends Application {
         StackPane outerWrapper = new StackPane(fxmlRoot);
         outerWrapper.setStyle("-fx-background-color: #050102;");
 
-        // 16:9 Default Resolution
         Scene scene = new Scene(outerWrapper, 1280, 720);
 
         javafx.beans.binding.DoubleBinding scaleBinding = javafx.beans.binding.Bindings.createDoubleBinding(
@@ -38,9 +37,17 @@ public class NearShare extends Application {
 
         stage.setTitle("NearShare");
         stage.setScene(scene);
-
         stage.setMinWidth(1280);
         stage.setMinHeight(720);
+
+        // Safely shut down background loops and database connections on window close
+        stage.setOnCloseRequest(event -> {
+            DiscoveryManager.stopBroadcasting();
+            DiscoveryManager.stopListening();
+            AppExecutors.shutdown();
+            javafx.application.Platform.exit();
+            System.exit(0);
+        });
 
         stage.show();
     }

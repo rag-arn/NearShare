@@ -5,65 +5,62 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class HistoryManager {
 
-    private static final String HISTORY_DIR = System.getProperty("user.home") + File.separator + ".nearshare";
-    private static final String HISTORY_FILE = HISTORY_DIR + File.separator + "history.txt";
+    private static final String LEGACY_HISTORY_DIR = System.getProperty("user.home") + File.separator + ".nearshare";
+    private static final String LEGACY_HISTORY_FILE = LEGACY_HISTORY_DIR + File.separator + "history.txt";
+
+    static {
+        migrateLegacyHistoryIfNeeded();
+    }
 
     public static void logTransfer(String status, String fileName, String peer) {
-        try {
-            File dir = new File(HISTORY_DIR);
-            if (!dir.exists()) dir.mkdirs();
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
+        String time = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"));
 
-            String date = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
-            String time = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"));
-
-            // Format: Status|FileName|Date|Time
-            String logEntry = String.format("%s|%s|%s|%s\n", status, fileName, date, time);
-
-            Files.write(Paths.get(HISTORY_FILE), logEntry.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Offload write to the DB executor
+        AppExecutors.getDbExecutor().execute(() -> {
+            DatabaseManager.insertTransfer(status, fileName, peer, date, time);
+        });
     }
 
     public static List<HistoryRecord> getHistory() {
-        List<HistoryRecord> history = new ArrayList<>();
         try {
-            Path path = Paths.get(HISTORY_FILE);
-            if (Files.exists(path)) {
-                List<String> lines = Files.readAllLines(path);
-
-                // Reverse the lines so the most recent is at the top
-                Collections.reverse(lines);
-
-                int serialCounter = 1;
-                for (String line : lines) {
-                    String[] parts = line.split("\\|");
-                    // Make sure it matches our new 4-part format to prevent crashing on old logs
-                    if (parts.length >= 4) {
-                        // Parts mapping: [0]=Status, [1]=FileName, [2]=Date, [3]=Time
-                        history.add(new HistoryRecord(serialCounter++, parts[1], parts[0], parts[2], parts[3]));
-                    }
-                }
-            }
-        } catch (IOException e) {
+            // Block and fetch safely on the DB thread to preserve the synchronous return signature
+            return AppExecutors.getDbExecutor().submit(() -> DatabaseManager.getAllTransfers()).get();
+        } catch (Exception e) {
             e.printStackTrace();
+            return Collections.emptyList();
         }
-        return history;
     }
 
     public static void clearHistory() {
+        AppExecutors.getDbExecutor().execute(() -> {
+            DatabaseManager.clearAllTransfers();
+        });
+    }
+
+    private static void migrateLegacyHistoryIfNeeded() {
         try {
-            Files.deleteIfExists(Paths.get(HISTORY_FILE));
+            Path legacyPath = Paths.get(LEGACY_HISTORY_FILE);
+            if (!Files.exists(legacyPath)) return;
+
+            List<String> lines = Files.readAllLines(legacyPath);
+            for (String line : lines) {
+                String[] parts = line.split("\\|");
+                if (parts.length >= 4) {
+                    DatabaseManager.insertTransfer(parts[0], parts[1], "Unknown", parts[2], parts[3]);
+                }
+            }
+
+            Files.move(legacyPath, Paths.get(LEGACY_HISTORY_FILE + ".bak"), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();
         }
