@@ -1,81 +1,60 @@
 package com.example.testproject;
 
-import javafx.application.Platform;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-public class ReceiverTask implements Runnable {
-    private Label statusLabel;
-    private ProgressBar progressBar;
-    private final int PORT = 8080;
+public class ReceiverTask extends TransferTask {
     private ServerSocket serverSocket;
     private volatile boolean isRunning = true;
 
-    public ReceiverTask(Label statusLabel, ProgressBar progressBar) {
-        this.statusLabel = statusLabel;
-        this.progressBar = progressBar;
+    public ReceiverTask(TransferListener listener) {
+        super(listener);
     }
 
-
-    public void attachUI(Label statusLabel, ProgressBar progressBar) {
-        this.statusLabel = statusLabel;
-        this.progressBar = progressBar;
-        Platform.runLater(() -> {
-            statusLabel.setText(isRunning ? "Listening for files..." : "Receive mode is securely OFF.");
-            progressBar.setVisible(false);
-        });
+    public void attachListener(TransferListener newListener) {
+        this.listener = newListener;
+        if (listener != null) {
+            listener.onMessage(isRunning ? "Listening for files..." : "Receive mode is securely OFF.");
+        }
     }
 
     @Override
-    public void run() {
+    protected void executeTransfer() throws Exception {
         try {
             serverSocket = new ServerSocket(PORT);
-            Platform.runLater(() -> {
-                statusLabel.setText("Listening for files...");
-                progressBar.setVisible(false);
-            });
+            if (listener != null) listener.onMessage("Listening for files...");
 
             while (isRunning) {
                 try (Socket socket = serverSocket.accept();
                      DataInputStream dis = new DataInputStream(socket.getInputStream())) {
 
                     int fileCount = dis.readInt();
-
-                    Platform.runLater(() -> {
-                        progressBar.setVisible(true);
-                        progressBar.setProgress(0.0);
-                    });
+                    if (listener != null) listener.onProgress(0.0);
 
                     for (int i = 0; i < fileCount; i++) {
                         String fileName = dis.readUTF();
                         long fileSize = dis.readLong();
                         final int current = i + 1;
 
-                        Platform.runLater(() -> statusLabel
-                                .setText("Receiving (" + current + "/" + fileCount + "): " + fileName));
-
-                        File downloadDir = new File("Downloads");
-                        if (!downloadDir.exists()) {
-                            downloadDir.mkdirs();
+                        if (listener != null) {
+                            listener.onMessage("Receiving (" + current + "/" + fileCount + "): " + fileName);
                         }
 
+                        File downloadDir = new File("Downloads");
+                        if (!downloadDir.exists()) downloadDir.mkdirs();
 
                         try (FileOutputStream fos = new FileOutputStream(new File(downloadDir, fileName))) {
-                            byte[] buffer = new byte[4096];
+                            byte[] buffer = new byte[BUFFER_SIZE];
                             int read;
                             long totalRead = 0;
                             long lastUpdate = 0;
 
-
                             while (totalRead < fileSize) {
                                 int bytesToRead = (int) Math.min(buffer.length, fileSize - totalRead);
                                 read = dis.read(buffer, 0, bytesToRead);
-                                if (read == -1)
-                                    break;
+                                if (read == -1) break;
 
                                 fos.write(buffer, 0, read);
                                 totalRead += read;
@@ -84,45 +63,34 @@ public class ReceiverTask implements Runnable {
                                 if (now - lastUpdate > 50 || totalRead == fileSize) {
                                     lastUpdate = now;
                                     double progress = fileSize == 0 ? 1.0 : (double) totalRead / fileSize;
-                                    Platform.runLater(() -> progressBar.setProgress(progress));
+                                    if (listener != null) listener.onProgress(progress);
                                 }
                             }
                             fos.flush();
                         }
 
-
                         String senderIP = socket.getInetAddress().getHostAddress();
                         HistoryManager.logTransfer("Received", fileName, senderIP);
-
                     }
 
-                    Platform.runLater(() -> {
-                        statusLabel.setText("All files received successfully!");
-                        progressBar.setVisible(false);
-                    });
+                    if (listener != null) listener.onComplete("All files received successfully!");
+
                 } catch (SocketException e) {
                     if (!isRunning) {
-                        Platform.runLater(() -> statusLabel.setText("Receive mode is securely OFF."));
+                        if (listener != null) listener.onMessage("Receive mode is securely OFF.");
                         break;
                     } else {
                         e.printStackTrace();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                    final String errorMsg = e.getMessage();
-                    Platform.runLater(() -> {
-                        statusLabel.setText("Error during transfer: " + errorMsg);
-                        progressBar.setVisible(false);
-                    });
+                    if (listener != null) listener.onError("Error during transfer: " + e.getMessage());
                 }
             }
         } catch (SocketException e) {
-            Platform.runLater(() -> statusLabel.setText("Receive mode is securely OFF."));
+            if (listener != null) listener.onMessage("Receive mode is securely OFF.");
         } catch (IOException e) {
-            Platform.runLater(() -> {
-                statusLabel.setText("Network Error: " + e.getMessage());
-                progressBar.setVisible(false);
-            });
+            if (listener != null) listener.onError("Network Error: " + e.getMessage());
         }
     }
 
