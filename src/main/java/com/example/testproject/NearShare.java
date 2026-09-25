@@ -40,7 +40,7 @@ public class NearShare extends Application {
         stage.setMinWidth(1280);
         stage.setMinHeight(720);
 
-        // Safely shut down background loops and database connections on window close
+
         stage.setOnCloseRequest(event -> {
             DiscoveryManager.stopBroadcasting();
             DiscoveryManager.stopListening();

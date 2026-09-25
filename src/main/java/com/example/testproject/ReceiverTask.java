@@ -20,9 +20,7 @@ public class ReceiverTask implements Runnable {
         this.progressBar = progressBar;
     }
 
-    // Lets MainController re-point this already-running task at the
-    // Label/ProgressBar of a freshly reloaded Receive screen, instead of
-    // killing the socket and starting a brand new ReceiverTask.
+
     public void attachUI(Label statusLabel, ProgressBar progressBar) {
         this.statusLabel = statusLabel;
         this.progressBar = progressBar;
@@ -45,7 +43,7 @@ public class ReceiverTask implements Runnable {
                 try (Socket socket = serverSocket.accept();
                      DataInputStream dis = new DataInputStream(socket.getInputStream())) {
 
-                    int fileCount = dis.readInt(); // Read how many files are incoming
+                    int fileCount = dis.readInt();
 
                     Platform.runLater(() -> {
                         progressBar.setVisible(true);
@@ -65,14 +63,14 @@ public class ReceiverTask implements Runnable {
                             downloadDir.mkdirs();
                         }
 
-                        // Try-with-resources for file output stream
+
                         try (FileOutputStream fos = new FileOutputStream(new File(downloadDir, fileName))) {
                             byte[] buffer = new byte[4096];
                             int read;
                             long totalRead = 0;
                             long lastUpdate = 0;
 
-                            // Strictly bound the reading to fileSize so files don't bleed into each other
+
                             while (totalRead < fileSize) {
                                 int bytesToRead = (int) Math.min(buffer.length, fileSize - totalRead);
                                 read = dis.read(buffer, 0, bytesToRead);
@@ -92,10 +90,10 @@ public class ReceiverTask implements Runnable {
                             fos.flush();
                         }
 
-                        // --- NEW: LOG INCOMING FILE TO HISTORY ---
+
                         String senderIP = socket.getInetAddress().getHostAddress();
                         HistoryManager.logTransfer("Received", fileName, senderIP);
-                        // -----------------------------------------
+
                     }
 
                     Platform.runLater(() -> {

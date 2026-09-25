@@ -30,7 +30,7 @@ public class SenderTask implements Runnable {
         });
 
         try (Socket socket = new Socket()) {
-            // Set a 5-second timeout for connecting so it doesn't hang indefinitely
+
             socket.connect(new java.net.InetSocketAddress(targetIP, PORT), 5000);
 
             Platform.runLater(() -> {
@@ -38,7 +38,7 @@ public class SenderTask implements Runnable {
             });
 
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-            dos.writeInt(filesToSend.size()); // Send the count first
+            dos.writeInt(filesToSend.size());
 
             for (int i = 0; i < filesToSend.size(); i++) {
                 File file = filesToSend.get(i);

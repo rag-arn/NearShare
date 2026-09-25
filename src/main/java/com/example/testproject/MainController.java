@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 import javafx.stage.FileChooser;
-import java.io.File;
-import java.io.IOException;
 
 public class MainController {
 
@@ -50,7 +48,6 @@ public class MainController {
     @FXML private ProgressBar sendProgressBar;
     @FXML private ProgressBar receiveProgressBar;
 
-    // The new animated GIF node
     @FXML private ImageView loadingAnimation;
 
     @FXML private Button selectFilesButton;
@@ -84,12 +81,8 @@ public class MainController {
             receiveToggle.setText("Receiver Mode");
             startReceiver();
 
-            // Bind the GIF visibility directly to the toggle and progress bar states
             if (loadingAnimation != null && receiveProgressBar != null) {
-                // Ensure the layout collapses and expands seamlessly without leaving empty gaps
                 loadingAnimation.managedProperty().bind(loadingAnimation.visibleProperty());
-
-                // Visible ONLY if toggle is on AND progress bar is hidden
                 loadingAnimation.visibleProperty().bind(
                         receiveToggle.selectedProperty().and(receiveProgressBar.visibleProperty().not())
                 );
@@ -225,7 +218,6 @@ public class MainController {
             return;
         }
         currentReceiverTask = new ReceiverTask(receiveStatusLabel, receiveProgressBar);
-        // Offload to general executor pool
         AppExecutors.getGeneralExecutor().submit(currentReceiverTask);
         DiscoveryManager.startBroadcasting();
     }
@@ -301,14 +293,12 @@ public class MainController {
             for (File f : filesToTransfer) {
                 HistoryManager.logTransfer("Sent", f.getName(), peer);
             }
-            // Offload to general executor pool
             AppExecutors.getGeneralExecutor().submit(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
         }
 
         selectedFilesData.clear();
         displayFileNames.clear();
         updateButtonVisibility();
-
     }
 
     private void applyPerfectScalingAndSwitch(ActionEvent event, String fxmlFile) throws IOException {
@@ -347,10 +337,6 @@ public class MainController {
 
     @FXML
     public void goToSendScene(ActionEvent event) throws IOException {
-        // NOTE: we intentionally do NOT call stopReceiver() here anymore.
-        // Leaving the Receive screen should not turn off your ability to
-        // receive files or be discovered - that was the bug where files
-        // couldn't be sent to a device that had merely navigated away.
         applyPerfectScalingAndSwitch(event, "Send.fxml");
     }
 

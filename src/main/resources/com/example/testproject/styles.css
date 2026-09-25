@@ -25,7 +25,7 @@
     -fx-font-size: 12px;
 }
 
-/* HIGHLY TRANSPARENT GLASS CARD */
+
 .glass-card {
     -fx-background-color: linear-gradient(to bottom right, rgba(40, 10, 20, 0.25), rgba(10, 2, 5, 0.35));
     -fx-border-color: rgba(255, 255, 255, 0.15);
@@ -36,7 +36,7 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 30, 0.2, 0, 8);
 }
 
-/* TRANSPARENT LISTVIEWS */
+
 .list-view {
     -fx-background-color: rgba(0, 0, 0, 0.15);
     -fx-border-color: rgba(255, 255, 255, 0.15);
@@ -48,7 +48,7 @@
 .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #CCCCCC;
-    -fx-font-size: 15px; /* Scaled up from 13px */
+    -fx-font-size: 15px;
     -fx-padding: 8px;
 }
 .list-cell:empty {
@@ -87,13 +87,13 @@
 }
 .tab-pane .tab .tab-label {
     -fx-text-fill: #CCCCCC;
-    -fx-font-size: 14px; /* Scaled up */
+    -fx-font-size: 14px;
 }
 .tab-pane:focused .tab-header-area .headers-region .tab:selected .focus-indicator {
     -fx-border-width: 0;
 }
 
-/* Circular Top-Right Buttons */
+
 .circular-icon-button {
     -fx-background-color: rgba(255, 255, 255, 0.08);
     -fx-border-color: rgba(255, 255, 255, 0.2);
@@ -110,7 +110,7 @@
     -fx-scale-y: 1.05;
 }
 
-/* Base Pill Buttons */
+
 .primary-pill-toggle, .secondary-pill-button {
     -fx-background-color:
             rgba(20, 20, 20, 0.6),
@@ -177,7 +177,7 @@
 
 .status-text {
     -fx-text-fill: #DFDFDF;
-    -fx-font-size: 15px; /* Scaled up from 12px */
+    -fx-font-size: 15px;
 }
 .status-dot {
     -fx-fill: #FF2A6D;
@@ -193,9 +193,7 @@
     -fx-background-radius: 6px;
 }
 
-/* ==========================================================
-   TABLEVIEW STYLING (Dark Glass Integration)
-   ========================================================== */
+
 .table-view {
     -fx-background-color: rgba(0, 0, 0, 0.25);
     -fx-border-color: rgba(255, 255, 255, 0.15);
@@ -204,13 +202,13 @@
     -fx-padding: 2px;
 }
 
-/* Header Background */
+
 .table-view .column-header-background {
     -fx-background-color: rgba(0, 0, 0, 0.5);
     -fx-background-radius: 8px 8px 0 0;
 }
 
-/* Individual Column Headers */
+
 .table-view .column-header, .table-view .filler {
     -fx-background-color: transparent;
     -fx-border-color: rgba(255, 255, 255, 0.1);
@@ -223,7 +221,7 @@
     -fx-font-size: 15px;
 }
 
-/* Table Rows and Cells */
+
 .table-row-cell {
     -fx-background-color: transparent;
 }
@@ -235,7 +233,7 @@
     -fx-alignment: CENTER; /* Centers text in cells */
 }
 
-/* Hover & Selected States */
+
 .table-row-cell:hover {
     -fx-background-color: rgba(255, 255, 255, 0.08);
 }
@@ -246,15 +244,13 @@
     -fx-text-fill: #FFFFFF;
 }
 
-/* Hide corner box */
+
 .table-view .corner {
     -fx-background-color: transparent;
 }
 
 
-/* ==========================================================
-   DIALOGS & ALERTS (Profile, Rename, Confirmations)
-   ========================================================== */
+
 .dialog-pane {
     -fx-background-color: #050102;
     -fx-border-color: rgba(255, 255, 255, 0.15);
@@ -276,7 +272,7 @@
     -fx-font-size: 14px;
 }
 
-/* Dialog Action Buttons (e.g. OK, Cancel, Close) */
+
 .dialog-pane .button-bar .button {
     -fx-background-color:
             rgba(20, 20, 20, 0.6),
@@ -300,7 +296,7 @@
     -fx-text-fill: #FFFFFF;
 }
 
-/* TextInputDialog Input Field */
+
 .dialog-pane .text-field {
     -fx-background-color: rgba(255, 255, 255, 0.08);
     -fx-text-fill: #FFFFFF;
