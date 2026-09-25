@@ -25,7 +25,7 @@ public class HistoryManager {
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"));
 
-        // Offload write to the DB executor
+
         AppExecutors.getDbExecutor().execute(() -> {
             DatabaseManager.insertTransfer(status, fileName, peer, date, time);
         });
@@ -33,7 +33,7 @@ public class HistoryManager {
 
     public static List<HistoryRecord> getHistory() {
         try {
-            // Block and fetch safely on the DB thread to preserve the synchronous return signature
+
             return AppExecutors.getDbExecutor().submit(() -> DatabaseManager.getAllTransfers()).get();
         } catch (Exception e) {
             e.printStackTrace();

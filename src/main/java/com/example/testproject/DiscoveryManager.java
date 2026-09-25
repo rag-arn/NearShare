@@ -35,11 +35,10 @@ public class DiscoveryManager {
 
     public static String myDeviceName = getDefaultDeviceName();
 
-    // Unique per-launch ID so we can tell our own broadcasts apart from a
-    // genuinely different device, even if it has the same device name.
+
     private static final String INSTANCE_ID = java.util.UUID.randomUUID().toString();
 
-    // NEW: Tracks the exact millisecond we last heard from a specific device
+
     private static ConcurrentHashMap<String, Long> lastSeen = new ConcurrentHashMap<>();
 
     public static void startBroadcasting() {
@@ -55,7 +54,7 @@ public class DiscoveryManager {
                     String message = "NEARSHARE:" + INSTANCE_ID + "|" + myDeviceName;
                     byte[] buffer = message.getBytes();
 
-                    // 1. Try to broadcast over all specific subnet broadcast addresses
+
                     try {
                         java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface.getNetworkInterfaces();
                         while (interfaces.hasMoreElements()) {
@@ -72,21 +71,21 @@ public class DiscoveryManager {
                             }
                         }
                     } catch (Exception e) {
-                        // ignore
+
                     }
 
-                    // 2. Also try the generic broadcast as a fallback
+
                     try {
                         DatagramPacket fallbackPacket = new DatagramPacket(buffer, buffer.length, InetAddress.getByName("255.255.255.255"), 8888);
                         broadcastSocket.send(fallbackPacket);
                     } catch (Exception e) {
-                        // ignore
+
                     }
 
-                    Thread.sleep(1500); // Ping out every 1.5 seconds
+                    Thread.sleep(1500);
                 }
             } catch (Exception e) {
-                // Ignore sleep interruptions or socket closures
+
             }
         });
         t.setDaemon(true);
@@ -96,9 +95,9 @@ public class DiscoveryManager {
     public static void startListening(ObservableList<String> peers) {
         if (isListening) return;
         isListening = true;
-        lastSeen.clear(); // Reset the tracker when starting
+        lastSeen.clear();
 
-        // 1. The Receiver Thread (Listens for incoming pings)
+
         Thread receiverThread = new Thread(() -> {
             try {
                 listenSocket = new DatagramSocket(null);
@@ -113,15 +112,13 @@ public class DiscoveryManager {
                     String message = new String(packet.getData(), 0, packet.getLength());
 
                     if (message.startsWith("NEARSHARE:")) {
-                        String payload = message.substring(10); // strip "NEARSHARE:"
+                        String payload = message.substring(10);
                         int sep = payload.indexOf('|');
-                        if (sep < 0) continue; // malformed/old-format packet, ignore
+                        if (sep < 0) continue;
 
                         String senderInstanceId = payload.substring(0, sep);
                         if (senderInstanceId.equals(INSTANCE_ID)) {
-                            // This is our own broadcast bouncing back (loopback broadcast
-                            // delivery, or received on another local interface). Skip it
-                            // so we never appear as a peer in our own list.
+
                             continue;
                         }
 
@@ -131,7 +128,7 @@ public class DiscoveryManager {
                         String displayString = senderName + " (" + ip + ")";
                         String ipSuffix = "(" + ip + ")";
 
-                        // Mark them as "alive" right now
+
                         lastSeen.put(displayString, System.currentTimeMillis());
 
                         Platform.runLater(() -> {
@@ -141,7 +138,7 @@ public class DiscoveryManager {
                                 if (peers.get(i).endsWith(ipSuffix)) {
                                     ipFound = true;
                                     if (!peers.get(i).equals(displayString)) {
-                                        // Name changed! Erase old timestamp and update UI
+
                                         lastSeen.remove(peers.get(i));
                                         peers.set(i, displayString);
                                         lastSeen.put(displayString, System.currentTimeMillis());
@@ -157,7 +154,7 @@ public class DiscoveryManager {
                     }
                 }
             } catch (SocketException e) {
-                // Socket was closed intentionally
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -165,23 +162,23 @@ public class DiscoveryManager {
         receiverThread.setDaemon(true);
         receiverThread.start();
 
-        // 2. The Cleanup Thread (Kills nodes that stop pinging)
+
         Thread cleanupThread = new Thread(() -> {
             while (isListening) {
                 try {
-                    Thread.sleep(2000); // Check the list every 2 seconds
+                    Thread.sleep(2000);
                     long now = System.currentTimeMillis();
 
                     Platform.runLater(() -> {
                         List<String> toRemove = new ArrayList<>();
                         for (String peer : peers) {
                             Long lastTime = lastSeen.get(peer);
-                            // If they missed 3 pings in a row (4.5 seconds of silence), they turned off
+
                             if (lastTime == null || (now - lastTime > 4500)) {
                                 toRemove.add(peer);
                             }
                         }
-                        // Remove all dead nodes from the UI
+
                         peers.removeAll(toRemove);
                         for (String deadPeer : toRemove) {
                             lastSeen.remove(deadPeer);

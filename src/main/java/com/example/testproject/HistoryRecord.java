@@ -15,7 +15,7 @@ public class HistoryRecord {
         this.time = time;
     }
 
-    // JavaFX TableView automatically looks for these exact "get" methods to populate columns
+
     public int getSerial() { return serial; }
     public String getFileName() { return fileName; }
     public String getStatus() { return status; }

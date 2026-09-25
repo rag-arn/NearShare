@@ -10,7 +10,7 @@
         <AnchorPane maxWidth="Infinity" maxHeight="Infinity">
             <children>
 
-                <!-- Top Left Logo (First child, identical to Send.fxml) -->
+
                 <HBox alignment="CENTER_LEFT" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="35.0">
                     <children>
                         <ImageView fitHeight="28.0" fitWidth="120.0" pickOnBounds="true" preserveRatio="true">
@@ -19,11 +19,11 @@
                     </children>
                 </HBox>
 
-                <!-- Centered Main Content -->
+
                 <VBox alignment="CENTER" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="70.0">
                     <children>
 
-                        <!-- Expansive Glass Card for the Table -->
+
                         <VBox alignment="CENTER" maxWidth="1000.0" prefWidth="1000.0" spacing="25.0" styleClass="glass-card">
                             <children>
 
@@ -43,7 +43,7 @@
                                     </children>
                                 </AnchorPane>
 
-                                <!-- Scaled down TableView height slightly to stop layout from squishing buttons and logo -->
+
                                 <TableView fx:id="historyTableView" minHeight="350.0" prefHeight="350.0" maxHeight="350.0">
                                     <columns>
                                         <TableColumn fx:id="colSerial" prefWidth="80.0" text="Serial" />
@@ -60,7 +60,7 @@
                                     </VBox.margin>
                                 </TableView>
 
-                                <!-- Bottom Buttons (Sized exactly identical to Send.fxml reference with minHeight lock) -->
+
                                 <HBox spacing="20.0" alignment="CENTER">
                                     <children>
                                         <Button mnemonicParsing="false" onAction="#goToReceiveScene" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="primary-action-button" text="Switch to Receiver Mode">
@@ -71,7 +71,7 @@
                                             </graphic>
                                         </Button>
 
-                                        <!-- Clear History uses the glossy burgundy action button style -->
+
                                         <Button mnemonicParsing="false" onAction="#onClearHistoryClicked" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="secondary-pill-button" text="Clear History" />
                                     </children>
                                 </HBox>

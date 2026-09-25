@@ -37,7 +37,7 @@ public class HistoryExportManager {
                 String status = String.valueOf(r.get("status"));
                 String date = String.valueOf(r.get("date"));
                 String time = String.valueOf(r.get("time"));
-                // Peer isn't in HistoryRecord's JSON shape, so we mark it as imported.
+
                 DatabaseManager.insertTransfer(status, fileName, "Imported", date, time);
                 count++;
             }
