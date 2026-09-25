@@ -1,5 +1,6 @@
 package com.example.testproject;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -211,13 +212,48 @@ public class MainController {
         }
     }
 
+    private TransferListener createReceiveListener() {
+        return new TransferListener() {
+            @Override
+            public void onMessage(String message) {
+                Platform.runLater(() -> receiveStatusLabel.setText(message));
+            }
+
+            @Override
+            public void onProgress(double progress) {
+                Platform.runLater(() -> {
+                    receiveProgressBar.setVisible(true);
+                    receiveProgressBar.setProgress(progress);
+                });
+            }
+
+            @Override
+            public void onComplete(String finalMessage) {
+                Platform.runLater(() -> {
+                    receiveStatusLabel.setText(finalMessage);
+                    receiveProgressBar.setVisible(false);
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                Platform.runLater(() -> {
+                    receiveStatusLabel.setText(errorMessage);
+                    receiveProgressBar.setVisible(false);
+                });
+            }
+        };
+    }
+
     private void startReceiver() {
+        TransferListener listener = createReceiveListener();
+
         if (currentReceiverTask != null) {
-            currentReceiverTask.attachUI(receiveStatusLabel, receiveProgressBar);
+            currentReceiverTask.attachListener(listener);
             DiscoveryManager.startBroadcasting();
             return;
         }
-        currentReceiverTask = new ReceiverTask(receiveStatusLabel, receiveProgressBar);
+        currentReceiverTask = new ReceiverTask(listener);
         AppExecutors.getGeneralExecutor().submit(currentReceiverTask);
         DiscoveryManager.startBroadcasting();
     }
@@ -288,12 +324,43 @@ public class MainController {
 
         List<File> filesToTransfer = new ArrayList<>(selectedFilesData);
 
+        TransferListener sendListener = new TransferListener() {
+            @Override
+            public void onMessage(String message) {
+                Platform.runLater(() -> sendStatusLabel.setText(message));
+            }
+
+            @Override
+            public void onProgress(double progress) {
+                Platform.runLater(() -> {
+                    sendProgressBar.setVisible(true);
+                    sendProgressBar.setProgress(progress);
+                });
+            }
+
+            @Override
+            public void onComplete(String finalMessage) {
+                Platform.runLater(() -> {
+                    sendStatusLabel.setText(finalMessage);
+                    sendProgressBar.setVisible(false);
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                Platform.runLater(() -> {
+                    sendStatusLabel.setText(errorMessage);
+                    sendProgressBar.setVisible(false);
+                });
+            }
+        };
+
         for (String peer : targetPeers) {
             String targetIP = peer.substring(peer.lastIndexOf("(") + 1, peer.lastIndexOf(")"));
             for (File f : filesToTransfer) {
                 HistoryManager.logTransfer("Sent", f.getName(), peer);
             }
-            AppExecutors.getGeneralExecutor().submit(new SenderTask(targetIP, filesToTransfer, sendStatusLabel, sendProgressBar));
+            AppExecutors.getGeneralExecutor().submit(new SenderTask(targetIP, filesToTransfer, sendListener));
         }
 
         selectedFilesData.clear();

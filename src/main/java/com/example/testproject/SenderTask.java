@@ -1,41 +1,30 @@
 package com.example.testproject;
 
-import javafx.application.Platform;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import java.io.*;
 import java.net.Socket;
 import java.util.List;
 
-public class SenderTask implements Runnable {
+public class SenderTask extends TransferTask {
     private String targetIP;
     private List<File> filesToSend;
-    private Label statusLabel;
-    private ProgressBar progressBar;
-    private final int PORT = 8080;
 
-    public SenderTask(String targetIP, List<File> filesToSend, Label statusLabel, ProgressBar progressBar) {
+    public SenderTask(String targetIP, List<File> filesToSend, TransferListener listener) {
+        super(listener);
         this.targetIP = targetIP;
         this.filesToSend = filesToSend;
-        this.statusLabel = statusLabel;
-        this.progressBar = progressBar;
     }
 
     @Override
-    public void run() {
-        Platform.runLater(() -> {
-            statusLabel.setText("Connecting to " + targetIP + "...");
-            progressBar.setVisible(true);
-            progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
-        });
+    protected void executeTransfer() throws Exception {
+        if (listener != null) {
+            listener.onMessage("Connecting to " + targetIP + "...");
+            listener.onProgress(-1.0); // Indeterminate progress
+        }
 
         try (Socket socket = new Socket()) {
-
             socket.connect(new java.net.InetSocketAddress(targetIP, PORT), 5000);
 
-            Platform.runLater(() -> {
-                progressBar.setProgress(0.0);
-            });
+            if (listener != null) listener.onProgress(0.0);
 
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
             dos.writeInt(filesToSend.size());
@@ -44,18 +33,20 @@ public class SenderTask implements Runnable {
                 File file = filesToSend.get(i);
                 final int current = i + 1;
 
-                Platform.runLater(() -> statusLabel.setText("Sending (" + current + "/" + filesToSend.size() + "): " + file.getName()));
+                if (listener != null) {
+                    listener.onMessage("Sending (" + current + "/" + filesToSend.size() + "): " + file.getName());
+                }
 
                 FileInputStream fis = new FileInputStream(file);
                 long fileSize = file.length();
                 dos.writeUTF(file.getName());
                 dos.writeLong(fileSize);
 
-                byte[] buffer = new byte[4096];
+                byte[] buffer = new byte[BUFFER_SIZE];
                 int read;
                 long totalSent = 0;
-
                 long lastUpdate = 0;
+
                 while ((read = fis.read(buffer)) > 0) {
                     dos.write(buffer, 0, read);
                     totalSent += read;
@@ -64,7 +55,7 @@ public class SenderTask implements Runnable {
                     if (now - lastUpdate > 50 || totalSent == fileSize) {
                         lastUpdate = now;
                         double progress = fileSize == 0 ? 1.0 : (double) totalSent / fileSize;
-                        Platform.runLater(() -> progressBar.setProgress(progress));
+                        if (listener != null) listener.onProgress(progress);
                     }
                 }
                 fis.close();
@@ -72,15 +63,10 @@ public class SenderTask implements Runnable {
             dos.flush();
             dos.close();
 
-            Platform.runLater(() -> {
-                statusLabel.setText("All files sent successfully!");
-                progressBar.setVisible(false);
-            });
+            if (listener != null) listener.onComplete("All files sent successfully!");
+
         } catch (IOException e) {
-            Platform.runLater(() -> {
-                statusLabel.setText("Failed to connect to " + targetIP);
-                progressBar.setVisible(false);
-            });
+            if (listener != null) listener.onError("Failed to connect to " + targetIP);
         }
     }
 }
