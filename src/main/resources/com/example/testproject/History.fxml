@@ -63,7 +63,7 @@
                                 <!-- Bottom Buttons (Sized exactly identical to Send.fxml reference with minHeight lock) -->
                                 <HBox spacing="20.0" alignment="CENTER">
                                     <children>
-                                        <Button mnemonicParsing="false" onAction="#goToReceiveScene" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="secondary-pill-button" text="Switch to Receiver Mode">
+                                        <Button mnemonicParsing="false" onAction="#goToReceiveScene" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="primary-action-button" text="Switch to Receiver Mode">
                                             <graphic>
                                                 <ImageView fitHeight="20.0" fitWidth="20.0" mouseTransparent="true" pickOnBounds="true" preserveRatio="true">
                                                     <image><Image url="@receive.png" /></image>
@@ -72,7 +72,7 @@
                                         </Button>
 
                                         <!-- Clear History uses the glossy burgundy action button style -->
-                                        <Button mnemonicParsing="false" onAction="#onClearHistoryClicked" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="primary-action-button" text="Clear History" />
+                                        <Button mnemonicParsing="false" onAction="#onClearHistoryClicked" minHeight="55.0" prefHeight="55.0" prefWidth="350.0" styleClass="secondary-pill-button" text="Clear History" />
                                     </children>
                                 </HBox>
 
